@@ -20,7 +20,7 @@ export async function isEnabled() {
 
 export async function toggleExtension(enable = true) {
 	extensionSettings.enabled = enable;
-	$("#tracker_enable").prop("checked", enable);
+	$("#tracker_enhanced_enable").prop("checked", enable);
 	saveSettingsDebounced();
 }
 
@@ -104,30 +104,30 @@ function setSettingsInitialValues() {
 	updatePopupDropdown();
 	updateFieldVisibility(extensionSettings.generationMode);
 
-	$("#tracker_enable").prop("checked", extensionSettings.enabled);
-	$("#tracker_generation_mode").val(extensionSettings.generationMode);
-	$("#tracker_generation_target").val(extensionSettings.generationTarget);
-	$("#tracker_show_popup_for").val(extensionSettings.showPopupFor);
-	$("#tracker_format").val(extensionSettings.trackerFormat);
-	$("#tracker_debug").prop("checked", extensionSettings.debugMode);
+	$("#tracker_enhanced_enable").prop("checked", extensionSettings.enabled);
+	$("#tracker_enhanced_generation_mode").val(extensionSettings.generationMode);
+	$("#tracker_enhanced_generation_target").val(extensionSettings.generationTarget);
+	$("#tracker_enhanced_show_popup_for").val(extensionSettings.showPopupFor);
+	$("#tracker_enhanced_format").val(extensionSettings.trackerFormat);
+	$("#tracker_enhanced_debug").prop("checked", extensionSettings.debugMode);
 
 	// Set other settings fields
-	$("#tracker_context_prompt").val(extensionSettings.generateContextTemplate);
-	$("#tracker_system_prompt").val(extensionSettings.generateSystemPrompt);
-	$("#tracker_request_prompt").val(extensionSettings.generateRequestPrompt);
-	$("#tracker_recent_messages").val(extensionSettings.generateRecentMessagesTemplate);
-	$("#tracker_inline_request_prompt").val(extensionSettings.inlineRequestPrompt);
-	$("#tracker_message_summarization_context_template").val(extensionSettings.messageSummarizationContextTemplate);
-	$("#tracker_message_summarization_system_prompt").val(extensionSettings.messageSummarizationSystemPrompt);
-	$("#tracker_message_summarization_request_prompt").val(extensionSettings.messageSummarizationRequestPrompt);
-	$("#tracker_message_summarization_recent_messages").val(extensionSettings.messageSummarizationRecentMessagesTemplate);
-	$("#tracker_character_description").val(extensionSettings.characterDescriptionTemplate);
-	$("#tracker_mes_tracker_template").val(extensionSettings.mesTrackerTemplate);
-	$("#tracker_mes_tracker_javascript").val(extensionSettings.mesTrackerJavascript);
-	$("#tracker_number_of_messages").val(extensionSettings.numberOfMessages);
-	$("#tracker_generate_from_message").val(extensionSettings.generateFromMessage);
-	$("#tracker_minimum_depth").val(extensionSettings.minimumDepth);
-	$("#tracker_response_length").val(extensionSettings.responseLength);
+	$("#tracker_enhanced_context_prompt").val(extensionSettings.generateContextTemplate);
+	$("#tracker_enhanced_system_prompt").val(extensionSettings.generateSystemPrompt);
+	$("#tracker_enhanced_request_prompt").val(extensionSettings.generateRequestPrompt);
+	$("#tracker_enhanced_recent_messages").val(extensionSettings.generateRecentMessagesTemplate);
+	$("#tracker_enhanced_inline_request_prompt").val(extensionSettings.inlineRequestPrompt);
+	$("#tracker_enhanced_message_summarization_context_template").val(extensionSettings.messageSummarizationContextTemplate);
+	$("#tracker_enhanced_message_summarization_system_prompt").val(extensionSettings.messageSummarizationSystemPrompt);
+	$("#tracker_enhanced_message_summarization_request_prompt").val(extensionSettings.messageSummarizationRequestPrompt);
+	$("#tracker_enhanced_message_summarization_recent_messages").val(extensionSettings.messageSummarizationRecentMessagesTemplate);
+	$("#tracker_enhanced_character_description").val(extensionSettings.characterDescriptionTemplate);
+	$("#tracker_enhanced_mes_tracker_template").val(extensionSettings.mesTrackerTemplate);
+	$("#tracker_enhanced_mes_tracker_javascript").val(extensionSettings.mesTrackerJavascript);
+	$("#tracker_enhanced_number_of_messages").val(extensionSettings.numberOfMessages);
+	$("#tracker_enhanced_generate_from_message").val(extensionSettings.generateFromMessage);
+	$("#tracker_enhanced_minimum_depth").val(extensionSettings.minimumDepth);
+	$("#tracker_enhanced_response_length").val(extensionSettings.responseLength);
 
 	// Process the tracker javascript
 	processTrackerJavascript();
@@ -142,45 +142,45 @@ function setSettingsInitialValues() {
  */
 function registerSettingsListeners() {
 	// Preset management
-	$("#tracker_preset_select").on("change", onPresetSelectChange);
-	$("#tracker_connection_profile").on("change", onConnectionProfileSelectChange);
-	$("#tracker_completion_preset").on("change", onCompletionPresetSelectChange);
-	$("#tracker_preset_new").on("click", onPresetNewClick);
-	$("#tracker_preset_save").on("click", onPresetSaveClick);
-	$("#tracker_preset_rename").on("click", onPresetRenameClick);
-	$("#tracker_preset_restore").on("click", onPresetRestoreClick);
-	$("#tracker_preset_delete").on("click", onPresetDeleteClick);
-	$("#tracker_preset_export").on("click", onPresetExportClick);
-	$("#tracker_preset_import_button").on("click", onPresetImportButtonClick);
-	$("#tracker_preset_import").on("change", onPresetImportChange);
+	$("#tracker_enhanced_preset_select").on("change", onPresetSelectChange);
+	$("#tracker_enhanced_connection_profile").on("change", onConnectionProfileSelectChange);
+	$("#tracker_enhanced_completion_preset").on("change", onCompletionPresetSelectChange);
+	$("#tracker_enhanced_preset_new").on("click", onPresetNewClick);
+	$("#tracker_enhanced_preset_save").on("click", onPresetSaveClick);
+	$("#tracker_enhanced_preset_rename").on("click", onPresetRenameClick);
+	$("#tracker_enhanced_preset_restore").on("click", onPresetRestoreClick);
+	$("#tracker_enhanced_preset_delete").on("click", onPresetDeleteClick);
+	$("#tracker_enhanced_preset_export").on("click", onPresetExportClick);
+	$("#tracker_enhanced_preset_import_button").on("click", onPresetImportButtonClick);
+	$("#tracker_enhanced_preset_import").on("change", onPresetImportChange);
 
 	// Settings fields
-	$("#tracker_enable").on("input", onSettingCheckboxInput("enabled"));
-	$("#tracker_generation_mode").on("change", onGenerationModeChange);
-	$("#tracker_generation_target").on("change", onSettingSelectChange("generationTarget"));
-	$("#tracker_show_popup_for").on("change", onSettingSelectChange("showPopupFor"));
-	$("#tracker_format").on("change", onSettingSelectChange("trackerFormat"));
-	$("#tracker_debug").on("input", onSettingCheckboxInput("debugMode"));
+	$("#tracker_enhanced_enable").on("input", onSettingCheckboxInput("enabled"));
+	$("#tracker_enhanced_generation_mode").on("change", onGenerationModeChange);
+	$("#tracker_enhanced_generation_target").on("change", onSettingSelectChange("generationTarget"));
+	$("#tracker_enhanced_show_popup_for").on("change", onSettingSelectChange("showPopupFor"));
+	$("#tracker_enhanced_format").on("change", onSettingSelectChange("trackerFormat"));
+	$("#tracker_enhanced_debug").on("input", onSettingCheckboxInput("debugMode"));
 
-	$("#tracker_context_prompt").on("input", onSettingInputareaInput("generateContextTemplate"));
-	$("#tracker_system_prompt").on("input", onSettingInputareaInput("generateSystemPrompt"));
-	$("#tracker_request_prompt").on("input", onSettingInputareaInput("generateRequestPrompt"));
-	$("#tracker_recent_messages").on("input", onSettingInputareaInput("generateRecentMessagesTemplate"));
-	$("#tracker_inline_request_prompt").on("input", onSettingInputareaInput("inlineRequestPrompt"));
-	$("#tracker_message_summarization_context_template").on("input", onSettingInputareaInput("messageSummarizationContextTemplate"));
-	$("#tracker_message_summarization_system_prompt").on("input", onSettingInputareaInput("messageSummarizationSystemPrompt"));
-	$("#tracker_message_summarization_request_prompt").on("input", onSettingInputareaInput("messageSummarizationRequestPrompt"));
-	$("#tracker_message_summarization_recent_messages").on("input", onSettingInputareaInput("messageSummarizationRecentMessagesTemplate"));
-	$("#tracker_character_description").on("input", onSettingInputareaInput("characterDescriptionTemplate"));
-	$("#tracker_mes_tracker_template").on("input", onSettingInputareaInput("mesTrackerTemplate"));
-	$("#tracker_mes_tracker_javascript").on("input", onSettingInputareaInput("mesTrackerJavascript"));
-	$("#tracker_number_of_messages").on("input", onSettingNumberInput("numberOfMessages"));
-	$("#tracker_generate_from_message").on("input", onSettingNumberInput("generateFromMessage"));
-	$("#tracker_minimum_depth").on("input", onSettingNumberInput("minimumDepth"));
-	$("#tracker_response_length").on("input", onSettingNumberInput("responseLength"));
+	$("#tracker_enhanced_context_prompt").on("input", onSettingInputareaInput("generateContextTemplate"));
+	$("#tracker_enhanced_system_prompt").on("input", onSettingInputareaInput("generateSystemPrompt"));
+	$("#tracker_enhanced_request_prompt").on("input", onSettingInputareaInput("generateRequestPrompt"));
+	$("#tracker_enhanced_recent_messages").on("input", onSettingInputareaInput("generateRecentMessagesTemplate"));
+	$("#tracker_enhanced_inline_request_prompt").on("input", onSettingInputareaInput("inlineRequestPrompt"));
+	$("#tracker_enhanced_message_summarization_context_template").on("input", onSettingInputareaInput("messageSummarizationContextTemplate"));
+	$("#tracker_enhanced_message_summarization_system_prompt").on("input", onSettingInputareaInput("messageSummarizationSystemPrompt"));
+	$("#tracker_enhanced_message_summarization_request_prompt").on("input", onSettingInputareaInput("messageSummarizationRequestPrompt"));
+	$("#tracker_enhanced_message_summarization_recent_messages").on("input", onSettingInputareaInput("messageSummarizationRecentMessagesTemplate"));
+	$("#tracker_enhanced_character_description").on("input", onSettingInputareaInput("characterDescriptionTemplate"));
+	$("#tracker_enhanced_mes_tracker_template").on("input", onSettingInputareaInput("mesTrackerTemplate"));
+	$("#tracker_enhanced_mes_tracker_javascript").on("input", onSettingInputareaInput("mesTrackerJavascript"));
+	$("#tracker_enhanced_number_of_messages").on("input", onSettingNumberInput("numberOfMessages"));
+	$("#tracker_enhanced_generate_from_message").on("input", onSettingNumberInput("generateFromMessage"));
+	$("#tracker_enhanced_minimum_depth").on("input", onSettingNumberInput("minimumDepth"));
+	$("#tracker_enhanced_response_length").on("input", onSettingNumberInput("responseLength"));
 
-	$("#tracker_prompt_maker").on("click", onTrackerPromptMakerClick);
-	$("#tracker_reset_presets").on("click", onTrackerPromptResetClick);
+	$("#tracker_enhanced_prompt_maker").on("click", onTrackerPromptMakerClick);
+	$("#tracker_enhanced_reset_presets").on("click", onTrackerPromptResetClick);
 
 	const {
 		eventSource,
@@ -201,7 +201,7 @@ function getConnectionProfiles() {
 }
 
 function updateConnectionProfileDropdown() {
-	const connectionProfileSelect = $("#tracker_connection_profile");
+	const connectionProfileSelect = $("#tracker_enhanced_connection_profile");
 	const connectionProfiles = getConnectionProfiles();
 	debug("connections profiles found", connectionProfiles);
 	connectionProfileSelect.empty();
@@ -320,7 +320,7 @@ function getCompletionPresets() {
 }
 
 function updateCompletionPresetsDropdown() {
-	const completionPresetsSelect = $("#tracker_completion_preset");
+	const completionPresetsSelect = $("#tracker_enhanced_completion_preset");
 	const completionPresets = getCompletionPresets();
 	debug("completion presets found", completionPresets);
 	completionPresetsSelect.empty();
@@ -354,7 +354,7 @@ function onCompletionPresetSelectChange() {
  * Updates the presets dropdown with the available presets.
  */
 function updatePresetDropdown() {
-	const presetSelect = $("#tracker_preset_select");
+	const presetSelect = $("#tracker_enhanced_preset_select");
 	presetSelect.empty();
 	for (const presetName in extensionSettings.presets) {
 		const option = $("<option>").val(presetName).text(presetName);
@@ -392,7 +392,7 @@ function onPresetNewClick() {
 		extensionSettings.selectedPreset = presetName;
 		updatePresetDropdown();
 		saveSettingsDebounced();
-		toastr.success(`Tracker preset ${presetName} created.`);
+		toastr.success(`Tracker Enhanced preset ${presetName} created.`);
 	} else if (extensionSettings.presets[presetName]) {
 		alert("A preset with that name already exists.");
 	}
@@ -407,7 +407,7 @@ function onPresetSaveClick() {
 	const updatedPreset = getCurrentPresetSettings();
 	extensionSettings.presets[presetName] = updatedPreset;
 	saveSettingsDebounced();
-	toastr.success(`Tracker preset ${presetName} saved.`);
+	toastr.success(`Tracker Enhanced preset ${presetName} saved.`);
 }
 
 /**
@@ -424,7 +424,7 @@ function onPresetRenameClick() {
 		}
 		updatePresetDropdown();
 		saveSettingsDebounced();
-		toastr.success(`Tracker preset ${oldName} renamed to ${newName}.`);
+		toastr.success(`Tracker Enhanced preset ${oldName} renamed to ${newName}.`);
 	} else if (extensionSettings.presets[newName]) {
 		alert("A preset with that name already exists.");
 	}
@@ -441,7 +441,7 @@ function onPresetRestoreClick() {
 
 	setSettingsInitialValues();
 	saveSettingsDebounced();
-	toastr.success(`Tracker preset ${extensionSettings.selectedPreset} restored.`);
+	toastr.success(`Tracker Enhanced preset ${extensionSettings.selectedPreset} restored.`);
 }
 
 /**
@@ -455,7 +455,7 @@ function onPresetDeleteClick() {
 		updatePresetDropdown();
 		onPresetSelectChange.call($("#tracker_preset_select"));
 		saveSettingsDebounced();
-		toastr.success(`Tracker preset ${presetName} deleted.`);
+		toastr.success(`Tracker Enhanced preset ${presetName} deleted.`);
 	}
 }
 
@@ -480,7 +480,7 @@ function onPresetExportClick() {
  * Event handler for clicking the import button.
  */
 function onPresetImportButtonClick() {
-	$("#tracker_preset_import").click();
+	$("#tracker_enhanced_preset_import").click();
 }
 
 /**
@@ -622,36 +622,36 @@ function processTrackerJavascript() {
         // Ensure the final result is an object
         if (typeof parsedObject === "object" && parsedObject !== null) {
             // Call cleanup function of the existing tracker before replacing it
-            if (SillyTavern.tracker && typeof SillyTavern.tracker.cleanup === "function") {
+            if (SillyTavern.trackerEnhanced && typeof SillyTavern.trackerEnhanced.cleanup === "function") {
                 try {
-                    SillyTavern.tracker.cleanup();
-                    debug("Previous tracker cleaned up successfully.");
+                    SillyTavern.trackerEnhanced.cleanup();
+                    debug("Previous tracker enhanced cleaned up successfully.");
                 } catch (cleanupError) {
-                    error("Error during tracker cleanup:", cleanupError);
+                    error("Error during tracker enhanced cleanup:", cleanupError);
                 }
             }
 
             // Assign the new tracker object
-            SillyTavern.tracker = parsedObject;
+            SillyTavern.trackerEnhanced = parsedObject;
 
             // Call init function only if both init and cleanup exist
             if (
-                typeof SillyTavern.tracker.init === "function" &&
-                typeof SillyTavern.tracker.cleanup === "function"
+                typeof SillyTavern.trackerEnhanced.init === "function" &&
+                typeof SillyTavern.trackerEnhanced.cleanup === "function"
             ) {
                 try {
-                    SillyTavern.tracker.init();
-                    debug("Tracker initialized successfully.");
+                    SillyTavern.trackerEnhanced.init();
+                    debug("Tracker enhanced initialized successfully.");
                 } catch (initError) {
-                    error("Error initializing tracker:", initError);
+                    error("Error initializing tracker enhanced:", initError);
                 }
             }
 
-            debug("Custom tracker functions updated:", SillyTavern.tracker);
+            debug("Custom tracker enhanced functions updated:", SillyTavern.trackerEnhanced);
         }
     } catch (err) {
 		debug("Error processing tracker JavaScript:", err);
-        SillyTavern.tracker = {};
+        SillyTavern.trackerEnhanced = {};
     }
 }
 
@@ -761,7 +761,7 @@ function updateFieldVisibility(mode) {
  * Updates the popup for dropdown with the available values.
  */
 function updatePopupDropdown() {
-	const showPopupForSelect = $("#tracker_show_popup_for");
+	const showPopupForSelect = $("#tracker_enhanced_show_popup_for");
 	const availablePopupOptions = [];
 	switch (extensionSettings.generationTarget) {
 		case generationTargets.CHARACTER:

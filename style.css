@@ -1,21 +1,21 @@
-#trackerInterface {
+#trackerEnhancedInterface {
   top: unset;
   flex-direction: column;
   padding: 10px;
   gap: 10px;
 }
-#trackerInterface #trackerInterfaceHeader {
+#trackerEnhancedInterface #trackerInterfaceHeader {
   font-size: 17.55px;
   font-weight: 700;
 }
-#trackerInterface #trackerInterfaceFooter {
+#trackerEnhancedInterface #trackerInterfaceFooter {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: nowrap;
   gap: 10px;
 }
-#trackerInterface #trackerInterfaceFooter button {
+#trackerEnhancedInterface #trackerInterfaceFooter button {
   width: -moz-fit-content;
   width: fit-content;
 }
@@ -217,8 +217,9 @@
   cursor: move; /* Changes the cursor to indicate draggable area */
   font-size: 18px; /* Increases the size for better visibility */
   -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none; /* Prevents text selection when dragging */
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* Prevents text selection when dragging */
 }
 .tracker-prompt-maker .ui-sortable-placeholder {
   border: 1px dashed #ccc; /* Dashed border */
@@ -231,10 +232,10 @@
 }
 .tracker-prompt-maker .fields-container.dragging > .field-wrapper,
 .tracker-prompt-maker .nested-fields-container.dragging > .field-wrapper {
-  user-select: none;
-  -moz-user-select: none;
   -webkit-user-select: none;
+  -moz-user-select: none;
   -ms-user-select: none;
+  user-select: none;
 }
 .tracker-prompt-maker .fields-container.dragging > .field-wrapper:not(.ui-sortable-helper) > .prompt-default-example-wrapper,
 .tracker-prompt-maker .fields-container.dragging > .field-wrapper:not(.ui-sortable-helper) > .buttons-wrapper,
@@ -324,11 +325,20 @@
   display: flex;
 }
 
-#tracker_reset_presets:hover {
+#tracker_enhanced_preset_import {
+  display: none !important;
+}
+
+.tracker-reset-container {
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+}
+
+#tracker_enhanced_reset_presets:hover {
   background-color: #a90000;
 }
 
-label[for=tracker_reset_presets] {
+label[for=tracker_enhanced_reset_presets] {
   display: flex;
   align-items: center;
 }

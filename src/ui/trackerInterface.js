@@ -50,7 +50,7 @@ export class TrackerInterface {
             <div id="trackerInterfaceheader" class="fa-solid fa-grip drag-grabber hoverglow"></div>
             <div id="trackerInterfaceClose" class="fa-solid fa-circle-xmark hoverglow dragClose"></div>
         </div>`;
-        const editorHeader = `<div id="trackerInterfaceHeader">Tracker</div>`;
+        const editorHeader = `<div id="trackerInterfaceHeader">Tracker Enhanced</div>`;
         const editorContainer = `<div id="trackerInterfaceContents" class="scrollY"></div>`;
         const editorFooter = `<div id="trackerInterfaceFooter">
             <button id="trackerInterfaceViewButton" class="menu_button menu_button_default interactable" tabindex="0">View</button>
@@ -64,7 +64,7 @@ export class TrackerInterface {
         </div>`;
 
         const newElement = $(template);
-        newElement.attr("id", "trackerInterface").removeClass("zoomed_avatar").addClass("draggable").empty();
+        newElement.attr("id", "trackerEnhancedInterface").removeClass("zoomed_avatar").addClass("draggable").empty();
         newElement.append(controlBarHtml).append(editorHeader).append(editorContainer).append(editorFooter);
         $("#movingDivs").append(newElement);
 

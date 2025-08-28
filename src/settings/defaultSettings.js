@@ -303,6 +303,14 @@ const mesTrackerTemplate = `<div class="tracker_default_mes_template">
             <hr>
             <strong>{{character}}:</strong><br />
             <table>
+				<tr>
+                    <td>Gender:</td>
+                    <td>{{character.Gender}}</td>
+                </tr>
+				<tr>
+                    <td>Age:</td>
+                    <td>{{character.Age}}</td>
+                </tr>
                 <tr>
                     <td>Hair:</td>
                     <td>{{character.Hair}}</td>
@@ -323,6 +331,26 @@ const mesTrackerTemplate = `<div class="tracker_default_mes_template">
                     <td>Position:</td>
                     <td>{{character.PostureAndInteraction}}</td>
                 </tr>
+				<tr>
+                    <td>FertilityCycle:</td>
+                    <td>{{character.FertilityCycle}}</td>
+                </tr>
+				<tr>
+                    <td>Pregnancy:</td>
+                    <td>{{character.Pregnancy}}</td>
+                </tr>
+				<tr>
+                    <td>Virginity:</td>
+                    <td>{{character.Virginity}}</td>
+                </tr>
+				<tr>
+                    <td>Traits:</td>
+                    <td>{{character.Traits}}</td>
+                </tr>
+				<tr>
+                    <td>Children:</td>
+                    <td>{{character.Children}}</td>
+                </tr>
             </table>
             {{/foreach}}
         </div>
@@ -331,167 +359,387 @@ const mesTrackerTemplate = `<div class="tracker_default_mes_template">
 <hr>`;
 
 const mesTrackerJavascript = `() => {
-    const helloWorld = (mesId, element) => {
-        console.log({message: "Hello, World!", mesId, element});
+    const hideGenderSpecificFields = (mesId, element) => {
+        console.log("hideGenderSpecificFields called for mesId:", mesId, "element:", element);
+        
+        // Find all character sections in this tracker preview
+        const characterSections = element.querySelectorAll('.mes_tracker_characters strong');
+        console.log("Found character sections:", characterSections.length);
+        
+        // Add consistent styling to all character tables
+        const addTableStyling = () => {
+            const style = document.createElement('style');
+            style.textContent = \`
+                .mes_tracker_characters table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                }
+                .mes_tracker_characters table td:first-child {
+                    width: 120px !important;
+                    min-width: 120px !important;
+                    max-width: 120px !important;
+                }
+                .mes_tracker_characters table td:last-child {
+                    width: auto !important;
+                }
+            \`;
+            document.head.appendChild(style);
+        };
+        
+        // Add styling only once
+        if (!document.querySelector('style[data-tracker-alignment]')) {
+            addTableStyling();
+            document.querySelector('style:last-of-type').setAttribute('data-tracker-alignment', 'true');
+        }
+        
+        characterSections.forEach((characterHeader, index) => {
+            console.log(\`Processing character \${index}:\`, characterHeader.textContent);
+            const characterName = characterHeader.textContent.replace(':', '').trim();
+            
+            // Look for the table after the character header
+            let nextElement = characterHeader.nextElementSibling;
+            let characterTable = null;
+            
+            while (nextElement) {
+                if (nextElement.tagName === 'TABLE') {
+                    characterTable = nextElement;
+                    break;
+                }
+                nextElement = nextElement.nextElementSibling;
+            }
+            
+            if (characterTable) {
+                console.log("Found character table for:", characterName);
+                
+                // Find the gender row to check the character's gender
+                const genderRow = Array.from(characterTable.rows).find(row => 
+                    row.cells[0] && row.cells[0].textContent.trim() === 'Gender:'
+                );
+                
+                if (genderRow && genderRow.cells[1]) {
+                    const gender = genderRow.cells[1].textContent.trim().toLowerCase();
+                    console.log(\`Gender for \${characterName}:\`, gender);
+                    
+                    // Hide fertility-specific rows for non-females
+                    if (!gender.includes('female')) {
+                        console.log(\`Hiding fertility fields for \${characterName} (gender: \${gender})\`);
+                        const rowsToHide = ['FertilityCycle:', 'Pregnancy:'];
+                        
+                        Array.from(characterTable.rows).forEach(row => {
+                            if (row.cells[0] && rowsToHide.includes(row.cells[0].textContent.trim())) {
+                                console.log("Hiding row:", row.cells[0].textContent.trim());
+                                row.style.display = 'none';
+                            }
+                        });
+                    } else {
+                        console.log(\`Keeping fertility fields for \${characterName} (gender: \${gender})\`);
+                    }
+                }
+            }
+        });
     };
 
     const init = () => {
-        console.log("Tracker preview js initialized!");
-
-		// Example of hooking into tracker preview added call
-		// SillyTavern.getContext().eventSource.on("TRACKER_PREVIEW_ADDED", helloWorld)
-
-		// Example of hooking into tracker preview updated call
-		// SillyTavern.getContext().eventSource.on("TRACKER_PREVIEW_UPDATED", helloWorld)
+        console.log("Gender-specific tracker filtering initialized!");
+        
+        SillyTavern.getContext().eventSource.on("TRACKER_ENHANCED_PREVIEW_ADDED", hideGenderSpecificFields);
+        SillyTavern.getContext().eventSource.on("TRACKER_ENHANCED_PREVIEW_UPDATED", hideGenderSpecificFields);
     };
-	
+    
     const cleanup = () => {
-        console.log("Tracker preview js cleaned up!");
-		// Example of releasing tracker preview calls
-		// SillyTavern.getContext().eventSource.off("TRACKER_PREVIEW_ADDED")
-		// SillyTavern.getContext().eventSource.off("TRACKER_PREVIEW_UPDATED")
+        console.log("Gender-specific tracker filtering cleaned up!");
+        
+        SillyTavern.getContext().eventSource.off("TRACKER_ENHANCED_PREVIEW_ADDED", hideGenderSpecificFields);
+        SillyTavern.getContext().eventSource.off("TRACKER_ENHANCED_PREVIEW_UPDATED", hideGenderSpecificFields);
+        
+        // Remove the added style
+        const style = document.querySelector('style[data-tracker-alignment]');
+        if (style) style.remove();
     };
 
     return {
-		init,
-		cleanup,
-        helloWorld
+        init,
+        cleanup,
+        hideGenderSpecificFields
     };
 }`;
 
 const trackerDef = {
 	"field-0": {
-		name: "Time",
-		type: "STRING",
-		presence: "DYNAMIC",
-		prompt: 'Adjust the time in **small increments**, ideally only a few seconds per update, to reflect natural progression, avoiding large jumps unless explicitly indicated (e.g., sleep, travel). Ensure that the time is appropriate for the setting (e.g., malls are typically open during certain hours). Use the 24-hour format: "HH:MM:SS; MM/DD/YYYY (Day Name)".',
-		defaultValue: "<Updated time if changed>",
-		exampleValues: ["09:15:30; 10/16/2024 (Wednesday)", "18:45:50; 10/16/2024 (Wednesday)", "15:10:20; 10/16/2024 (Wednesday)"],
-		nestedFields: {},
+		"name": "Time",
+		"type": "STRING",
+		"presence": "DYNAMIC",
+		"prompt": "Adjust the time in small increments (seconds or minutes) during normal updates to reflect natural progression. By default, avoid large jumps. However: If you explicitly receive a directive to change time significantly (e.g., \"fast forward\", \"skip ahead\", \"advance X hours/days/weeks\", or context like sleep, travel, waiting), you must update the time by that exact larger increment. Always display in 24-hour format: \"HH:MM:SS; MM/DD/YYYY (Day Name)\".",
+		"defaultValue": "<Updated time if changed>",
+		"exampleValues": [
+			"09:15:30; 10/16/2024 (Wednesday)",
+			"18:45:50; 10/16/2024 (Wednesday)",
+			"15:10:20; 10/16/2024 (Wednesday)"
+		],
+		"nestedFields": {}
 	},
 	"field-1": {
-		name: "Location",
-		type: "STRING",
-		presence: "DYNAMIC",
-		prompt: 'Provide a **detailed and specific location**, including exact places like rooms, landmarks, or stores, following this format: "Specific Place, Building, City, State". Avoid unintended reuse of specific locations from previous examples. Example: "Food court, second floor near east wing entrance, Madison Square Mall, Los Angeles, CA".',
-		defaultValue: "<Updated location if changed>",
-		exampleValues: ["Conference Room B, 12th Floor, Apex Corporation, New York, NY", "Main Gym Hall, Maple Street Fitness Center, Denver, CO", "South Beach, Miami, FL"],
-		nestedFields: {},
+		"name": "Location",
+		"type": "STRING",
+		"presence": "DYNAMIC",
+		"prompt": "Provide a **detailed and specific location**, including exact places like rooms, landmarks, or stores, following this format: \"Specific Place, Building, City, State\". Avoid unintended reuse of specific locations from previous examples. Example: \"Food court, second floor near east wing entrance, Madison Square Mall, Los Angeles, CA\".",
+		"defaultValue": "<Updated location if changed>",
+		"exampleValues": [
+			"Conference Room B, 12th Floor, Apex Corporation, New York, NY",
+			"Main Gym Hall, Maple Street Fitness Center, Denver, CO",
+			"South Beach, Miami, FL"
+		],
+		"nestedFields": {}
 	},
 	"field-2": {
-		name: "Weather",
-		type: "STRING",
-		presence: "DYNAMIC",
-		prompt: 'Describe current weather concisely to set the scene. Example: "Light Drizzle, Cool Outside".',
-		defaultValue: "<Updated weather if changed>",
-		exampleValues: ["Overcast, mild temperature", "Clear skies, warm evening", "Sunny, gentle sea breeze"],
-		nestedFields: {},
+		"name": "Weather",
+		"type": "STRING",
+		"presence": "DYNAMIC",
+		"prompt": "Describe current weather concisely to set the scene. Example: \"Light Drizzle, Cool Outside\".",
+		"defaultValue": "<Updated weather if changed>",
+		"exampleValues": [
+			"Overcast, mild temperature",
+			"Clear skies, warm evening",
+			"Sunny, gentle sea breeze"
+		],
+		"nestedFields": {}
 	},
 	"field-3": {
-		name: "Topics",
-		type: "ARRAY_OBJECT",
-		presence: "DYNAMIC",
-		prompt: "",
-		defaultValue: "",
-		exampleValues: ["", "", ""],
-		nestedFields: {
+		"name": "Topics",
+		"type": "ARRAY_OBJECT",
+		"presence": "DYNAMIC",
+		"prompt": "",
+		"defaultValue": "",
+		"exampleValues": [
+			"",
+			"",
+			""
+		],
+		"nestedFields": {
 			"field-4": {
-				name: "PrimaryTopic",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "**One- or two-word topic** describing main activity or focus of the scene.",
-				defaultValue: "<Updated Primary Topic if changed>",
-				exampleValues: ["Presentation", "Workout", "Relaxation"],
-				nestedFields: {},
+			"name": "PrimaryTopic",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**One- or two-word topic** describing main activity or focus of the scene.",
+			"defaultValue": "<Updated Primary Topic if changed>",
+			"exampleValues": [
+				"Presentation",
+				"Workout",
+				"Relaxation"
+			],
+			"nestedFields": {}
 			},
 			"field-5": {
-				name: "EmotionalTone",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "**One- or two-word topic** describing dominant emotional atmosphere of the scene.",
-				defaultValue: "<Updated Emotional Tone if changed>",
-				exampleValues: ["Tense", "Focused", "Calm"],
-				nestedFields: {},
+			"name": "EmotionalTone",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**One- or two-word topic** describing dominant emotional atmosphere of the scene.",
+			"defaultValue": "<Updated Emotional Tone if changed>",
+			"exampleValues": [
+				"Tense",
+				"Focused",
+				"Calm"
+			],
+			"nestedFields": {}
 			},
 			"field-6": {
-				name: "InteractionTheme",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "**One- or two-word topic** describing primary type of interactions or relationships in the scene.",
-				defaultValue: "<Updated Interaction Theme if changed>",
-				exampleValues: ["Professional", "Supportive", "Casual"],
-				nestedFields: {},
-			},
-		},
+			"name": "InteractionTheme",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**One- or two-word topic** describing primary type of interactions or relationships in the scene.",
+			"defaultValue": "<Updated Interaction Theme if changed>",
+			"exampleValues": [
+				"Professional",
+				"Supportive",
+				"Casual"
+			],
+			"nestedFields": {}
+			}
+		}
 	},
 	"field-7": {
-		name: "CharactersPresent",
-		type: "ARRAY",
-		presence: "DYNAMIC",
-		prompt: "List all characters currently present in an array format.",
-		defaultValue: "<List of characters present if changed>",
-		exampleValues: ['["Emma Thompson", "James Miller", "Sophia Rodriguez"]', '["Daniel Lee", "Olivia Harris"]', '["Liam Johnson", "Emily Clark"]'],
-		nestedFields: {},
+		"name": "CharactersPresent",
+		"type": "ARRAY",
+		"presence": "DYNAMIC",
+		"prompt": "List all characters currently present in an array format.",
+		"defaultValue": "<List of characters present if changed>",
+		"exampleValues": [
+			"[\"Emma Thompson\", \"James Miller\", \"Sophia Rodriguez\"]",
+			"[\"Daniel Lee\", \"Olivia Harris\"]",
+			"[\"Liam Johnson\", \"Emily Clark\"]"
+		],
+		"nestedFields": {}
 	},
 	"field-8": {
-		name: "Characters",
-		type: "FOR_EACH_OBJECT",
-		presence: "DYNAMIC",
-		prompt: "For each character, update the following details:",
-		defaultValue: "<Character Name>",
-		exampleValues: ['["Emma Thompson", "James Miller", "Sophia Rodriguez"]', '["Daniel Lee", "Olivia Harris"]', '["Liam Johnson", "Emily Clark"]'],
-		nestedFields: {
+		"name": "Characters",
+		"type": "FOR_EACH_OBJECT",
+		"presence": "DYNAMIC",
+		"prompt": "For each character, update the following details:",
+		"defaultValue": "<Character Name>",
+		"exampleValues": [
+			"[\"Emma Thompson\", \"James Miller\", \"Sophia Rodriguez\"]",
+			"[\"Daniel Lee\", \"Olivia Harris\"]",
+			"[\"Liam Johnson\", \"Emily Clark\"]"
+		],
+		"nestedFields": {
 			"field-9": {
-				name: "Hair",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "Describe style only.",
-				defaultValue: "<Updated hair description if changed>",
-				exampleValues: ['["Shoulder-length blonde hair, styled straight", "Short black hair, neatly combed", "Long curly brown hair, pulled back into a low bun"]', '["Short brown hair, damp with sweat", "Medium-length red hair, tied up in a high ponytail"]', '["Short sandy blonde hair, slightly tousled", "Long wavy brown hair, loose and flowing"]'],
-				nestedFields: {},
+			"name": "Gender",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "A single world and an emoji for Character gender. ",
+			"defaultValue": "<Current gender if no update is needed>",
+			"exampleValues": [
+				"\"Male ♂️\"",
+				"\"Female ♀️\"",
+				"[\"Trans ⚧️\", \"Unkown ❓\"]"
+			],
+			"nestedFields": {}
 			},
 			"field-10": {
-				name: "Makeup",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "Describe current makeup.",
-				defaultValue: "<Updated makeup if changed>",
-				exampleValues: ['["Natural look with light foundation and mascara", "None", "Subtle eyeliner and nude lipstick"]', '["None", "Minimal, sweat-resistant mascara"]', '["None", "Sunscreen applied, no additional makeup"]'],
-				nestedFields: {},
+			"name": "Age",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "A single number displays character age based on Narrative. Change with time advancement. Or \"Unkown\" if unkown.",
+			"defaultValue": "<Current Age if no update is needed>",
+			"exampleValues": [
+				"\"Unkown\"",
+				"\"18\"",
+				"\"32\""
+			],
+			"nestedFields": {}
 			},
 			"field-11": {
-				name: "Outfit",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: '**IMPORTANT!** List the complete outfit, including **underwear and accessories**, even if the character is undressed. **Underwear must always be included in the outfit description. If underwear is intentionally missing, specify this clearly (e.g. "No Bra", "No Panties").** Outfit should stay the same until changed for a new one.',
-				defaultValue: "<Full outfit description, even if removed including color, fabric, and style details; **always include underwear and accessories if present. If underwear is intentionally missing, specify clearly**>",
-				exampleValues: [
-					'["Navy blue blazer over a white silk blouse; Gray pencil skirt; Black leather belt; Sheer black stockings; Black leather pumps; Pearl necklace; Silver wristwatch; White lace balconette bra; White lace hipster panties matching the bra", "Dark gray suit; Light blue dress shirt; Navy tie with silver stripes; Black leather belt; Black dress shoes; Black socks; White cotton crew-neck undershirt; Black cotton boxer briefs", "Cream-colored blouse with ruffled collar; Black slacks; Brown leather belt; Brown ankle boots; Gold hoop earrings; Beige satin push-up bra; Beige satin bikini panties matching the bra"]',
-					'["Gray moisture-wicking t-shirt; Black athletic shorts; White ankle socks; Gray running shoes; Black sports watch; Blue compression boxer briefs", "Black sports tank top; Purple athletic leggings; Black athletic sneakers; White ankle socks; Fitness tracker bracelet; Black racerback sports bra; Black seamless athletic bikini briefs matching the bra"]',
-					'["Light blue short-sleeve shirt; Khaki shorts; Brown leather sandals; Silver wristwatch; Blue plaid cotton boxer shorts", "White sundress over a red halter bikini; Straw hat; Brown flip-flops; Gold anklet; Red halter bikini top; Red tie-side bikini bottoms matching the top"]',
-				],
-				nestedFields: {},
+			"name": "Hair",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Describe style only.",
+			"defaultValue": "<Updated hair description if changed>",
+			"exampleValues": [
+				"[\"Shoulder-length blonde hair, styled straight\", \"Short black hair, neatly combed\", \"Long curly brown hair, pulled back into a low bun\"]",
+				"[\"Short brown hair, damp with sweat\", \"Medium-length red hair, tied up in a high ponytail\"]",
+				"[\"Short sandy blonde hair, slightly tousled\", \"Long wavy brown hair, loose and flowing\"]"
+			],
+			"nestedFields": {}
 			},
 			"field-12": {
-				name: "StateOfDress",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "Describe how put-together or disheveled the character appears, including any removed clothing. Note where clothing items from outfit were discarded.",
-				defaultValue: "<Current state of dress if no update is needed. Note location where discarded outfit items are placed if character is undressed>",
-				exampleValues: ['["Professionally dressed, neat appearance", "Professionally dressed, attentive", "Professionally dressed, organized"]', '["Workout attire, lightly perspiring", "Workout attire, energized"]', '["Shirt and sandals removed, placed on beach towel", "Sundress and hat removed, placed on beach chair"]'],
-				nestedFields: {},
+			"name": "Makeup",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Describe current makeup.",
+			"defaultValue": "<Updated makeup if changed>",
+			"exampleValues": [
+				"[\"Natural look with light foundation and mascara\", \"None\", \"Subtle eyeliner and nude lipstick\"]",
+				"[\"None\", \"Minimal, sweat-resistant mascara\"]",
+				"[\"None\", \"Sunscreen applied, no additional makeup\"]"
+			],
+			"nestedFields": {}
 			},
 			"field-13": {
-				name: "PostureAndInteraction",
-				type: "STRING",
-				presence: "DYNAMIC",
-				prompt: "Describe physical posture, position relative to others or objects, and interactions.",
-				defaultValue: "<Current posture and interaction if no update is needed>",
-				exampleValues: ['["Standing at the podium, presenting slides, holding a laser pointer", "Sitting at the conference table, taking notes on a laptop", "Sitting next to James, reviewing printed documents"]', '["Lifting weights at the bench press, focused on form", "Running on the treadmill at a steady pace"]', '["Standing at the water\'s edge, feet in the surf", "Lying on a beach towel, sunbathing with eyes closed"]'],
-				nestedFields: {},
+			"name": "Outfit",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**IMPORTANT!** List the complete outfit, including **underwear and accessories**, even if the character is undressed. **Underwear must always be included in the outfit description. If underwear is intentionally missing, specify this clearly (e.g. \"No Bra\", \"No Panties\").** Outfit should stay the same until changed for a new one.",
+			"defaultValue": "<Full outfit description, even if removed including color, fabric, and style details; **always include underwear and accessories if present. If underwear is intentionally missing, specify clearly**>",
+			"exampleValues": [
+				"[\"Navy blue blazer over a white silk blouse; Gray pencil skirt; Black leather belt; Sheer black stockings; Black leather pumps; Pearl necklace; Silver wristwatch; White lace balconette bra; White lace hipster panties matching the bra\", \"Dark gray suit; Light blue dress shirt; Navy tie with silver stripes; Black leather belt; Black dress shoes; Black socks; White cotton crew-neck undershirt; Black cotton boxer briefs\", \"Cream-colored blouse with ruffled collar; Black slacks; Brown leather belt; Brown ankle boots; Gold hoop earrings; Beige satin push-up bra; Beige satin bikini panties matching the bra\"]",
+				"[\"Gray moisture-wicking t-shirt; Black athletic shorts; White ankle socks; Gray running shoes; Black sports watch; Blue compression boxer briefs\", \"Black sports tank top; Purple athletic leggings; Black athletic sneakers; White ankle socks; Fitness tracker bracelet; Black racerback sports bra; Black seamless athletic bikini briefs matching the bra\"]",
+				"[\"Light blue short-sleeve shirt; Khaki shorts; Brown leather sandals; Silver wristwatch; Blue plaid cotton boxer shorts\", \"White sundress over a red halter bikini; Straw hat; Brown flip-flops; Gold anklet; Red halter bikini top; Red tie-side bikini bottoms matching the top\"]"
+			],
+			"nestedFields": {}
 			},
-		},
-	},
+			"field-14": {
+			"name": "StateOfDress",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Describe how put-together or disheveled the character appears, including any removed clothing. Note where clothing items from outfit were discarded.",
+			"defaultValue": "<Current state of dress if no update is needed. Note location where discarded outfit items are placed if character is undressed>",
+			"exampleValues": [
+				"[\"Professionally dressed, neat appearance\", \"Professionally dressed, attentive\", \"Professionally dressed, organized\"]",
+				"[\"Workout attire, lightly perspiring\", \"Workout attire, energized\"]",
+				"[\"Shirt and sandals removed, placed on beach towel\", \"Sundress and hat removed, placed on beach chair\"]"
+			],
+			"nestedFields": {}
+			},
+			"field-15": {
+			"name": "PostureAndInteraction",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Describe physical posture, position relative to others or objects, and interactions.",
+			"defaultValue": "<Current posture and interaction if no update is needed>",
+			"exampleValues": [
+				"[\"Standing at the podium, presenting slides, holding a laser pointer\", \"Sitting at the conference table, taking notes on a laptop\", \"Sitting next to James, reviewing printed documents\"]",
+				"[\"Lifting weights at the bench press, focused on form\", \"Running on the treadmill at a steady pace\"]",
+				"[\"Standing at the water's edge, feet in the surf\", \"Lying on a beach towel, sunbathing with eyes closed\"]"
+			],
+			"nestedFields": {}
+			},
+			"field-16": {
+			"name": "FertilityCycle",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**Female Character only!** Displays the current fertility cycle stage. States advance with time. If Pregnancy tracking indicates conception, immediately switch FertilityCycle to \"Pregnant 👶\" and pause the cycle. Remain \"Pregnant 👶\" for the full duration of pregnancy. Resume cycle after delivery.",
+			"defaultValue": "<Current fertility cycle if no update is needed>",
+			"exampleValues": [
+				"[\"Menstrual 🩸 (Safe)\", \"Follicular 🌱 (Low Risk)\"]",
+				"[\"Ovulating 🌺 (High Risk!)\", \"Luteal 🌙 (Moderate Risk)\"]",
+				"[\"Pregnant 👶\"]"
+			],
+			"nestedFields": {}
+			},
+			"field-17": {
+			"name": "Pregnancy",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "**Female Character only!** Perform a d100 roll post-creampie scene to determine conception, chances are based on fertility cycle: Menstrual (0%), Follicular (15%), Ovulating (85%), Luteal (30%), Pregnant (0%) (e.g., rolled 80 during ovulating phase, 80<85, then yes. ). If yes, track days pregnant and trimester (1st: 0-90; 2nd: 91-180; 3rd: 181-270). Describe this with father's name.",
+			"defaultValue": "<Current Pregnancy if no update is needed>",
+			"exampleValues": [
+				"\"Not Pregnant\"",
+				"\"1st trimester, 0 days, impregnated by Harry\"",
+				"\"3st trimester, 200 days, impregnated by Harry\""
+			],
+			"nestedFields": {}
+			},
+			"field-18": {
+			"name": "Virginity",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "If virgin: \"Virgin\" else \"Lost to {partner}\".  Or \"Unkown\" if unkown.",
+			"defaultValue": "<Current Virginity if no update is needed>",
+			"exampleValues": [
+				"\"Unkown\"",
+				"\"Virgin\"",
+				"\"Lost to Sam Witwicky\""
+			],
+			"nestedFields": {}
+			},
+			"field-19": {
+			"name": "Traits",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Add or Remove trait based on Narrative. \"{trait}: {short description}\"",
+			"defaultValue": "<Current Traits if no update is needed>",
+			"exampleValues": [
+				"[\"No Traits\"]",
+				"[\"Giant Penis: causes tearing pain to partner during sex.\", \"Emotional Intelligence: deeply philosophical and sentimental\"]",
+				"[\"Tight Pussy: increase partner pleasure during sex.\", \"Masochist: gain pleasure from pain.\", \"Sadistic: deriving pleasure from inflicting pain.\"]"
+			],
+			"nestedFields": {}
+			},
+			"field-20": {
+			"name": "Children",
+			"type": "STRING",
+			"presence": "DYNAMIC",
+			"prompt": "Add child after birth based on Narrative. Format: \"{Birth Order}: {Name}, {Gender + Symbol}, child with {Other Parent}\"",
+			"defaultValue": "<Current Children if no update is needed>",
+			"exampleValues": [
+				"[\"No Child\"]",
+				"[\"1st Born: Eve, Female ♀️, child with Harry\"]",
+				"[\"1st Born: Aya, Female ♀️, child with Bob\", \"2nd Born: Max, Male ♂️, child with Sam\"]"
+			],
+			"nestedFields": {}
+			}
+		}
+	}
 };
 
 const trackerPreviewSelector = ".mes_block .mes_text";

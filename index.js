@@ -21,7 +21,7 @@ import { TrackerPreviewManager } from "./src/ui/trackerPreviewManager.js";
 import { generateTrackerCommand, getTrackerCommand, saveTrackerToMessageCommand, stateTrackerCommand, trackerOverrideCommand } from "./src/commands.js";
 import { FIELD_INCLUDE_OPTIONS } from "./src/trackerDataHandler.js";
 
-export const extensionName = "Tracker";
+export const extensionName = "TrackerEnhanced";
 const extensionNameLong = `SillyTavern-${extensionName}`;
 export const extensionFolderPath = `scripts/extensions/third-party/${extensionNameLong}`;
 
@@ -44,7 +44,7 @@ eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS, eventHandlers.generat
 
 
 SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-	name: 'generate-tracker',
+	name: 'generate-tracker-enhanced',
 	callback: generateTrackerCommand,
 	returns: 'The tracker JSON object.',
 	namedArgumentList: [
@@ -65,11 +65,11 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 		}),
 	],
 	helpString: 'Generates a tracker for the given message. If no message is provided, the tracker will be generated for the last non-system message.',
-	aliases: ['gen-tracker'],
+	aliases: ['gen-tracker-enhanced'],
 }));
 
 SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-	name: 'tracker-override',
+	name: 'tracker-enhanced-override',
 	callback: trackerOverrideCommand,
 	returns: 'The tracker JSON object.',
 	namedArgumentList: [
@@ -84,7 +84,7 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 }));
 
 SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-	name: 'save-tracker',
+	name: 'save-tracker-enhanced',
 	callback: saveTrackerToMessageCommand,
 	returns: 'The tracker JSON object.',
 	namedArgumentList: [
@@ -106,7 +106,7 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 }));
 
 SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-	name: 'get-tracker',
+	name: 'get-tracker-enhanced',
 	callback: getTrackerCommand,
 	returns: 'The tracker JSON object.',
 	namedArgumentList: [
@@ -122,7 +122,7 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 }));
 
 SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-	name: 'tracker-state',
+	name: 'tracker-enhanced-state',
 	callback: stateTrackerCommand,
 	returns: 'The current tracker extension state.',
 	namedArgumentList: [
@@ -134,5 +134,5 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 		}),
 	],
 	helpString: 'Get or set the tracker extension enabled/dissabled state.',
-	aliases: ['toggle-tracker'],
+	aliases: ['toggle-tracker-enhanced'],
 }));

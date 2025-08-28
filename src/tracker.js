@@ -68,7 +68,7 @@ export function getTracker(mesNum) {
 export async function injectInlinePrompt(clearTracker = false) {
 	const inlinePrompt = clearTracker ? "" : getRequestPrompt(extensionSettings.inlineRequestPrompt, null, false);
 	if(!clearTracker) debug("Injecting inline prompt:", inlinePrompt);
-	await setExtensionPrompt("inlineTrackerPrompt", inlinePrompt, 1, 0, true, EXTENSION_PROMPT_ROLES.SYSTEM);
+	await setExtensionPrompt("inlineTrackerEnhancedPrompt", inlinePrompt, 1, 0, true, EXTENSION_PROMPT_ROLES.SYSTEM);
 }
 
 /**
@@ -86,7 +86,7 @@ export async function injectTracker(tracker = "", position = 0) {
 		}
 	}
 	position = Math.max(extensionSettings.minimumDepth, position);
-	await setExtensionPrompt("tracker", trackerYAML, 1, position, true, EXTENSION_PROMPT_ROLES.SYSTEM);
+	await setExtensionPrompt("trackerEnhanced", trackerYAML, 1, position, true, EXTENSION_PROMPT_ROLES.SYSTEM);
 }
 
 /**
