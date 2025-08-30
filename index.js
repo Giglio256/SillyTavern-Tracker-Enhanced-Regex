@@ -21,12 +21,11 @@ import { TrackerPreviewManager } from "./src/ui/trackerPreviewManager.js";
 import { generateTrackerCommand, getTrackerCommand, saveTrackerToMessageCommand, stateTrackerCommand, trackerOverrideCommand } from "./src/commands.js";
 import { FIELD_INCLUDE_OPTIONS } from "./src/trackerDataHandler.js";
 
-export const extensionName = "TrackerEnhanced";
-const extensionNameLong = `SillyTavern-${extensionName}`;
-export const extensionFolderPath = `scripts/extensions/third-party/${extensionNameLong}`;
+export const extensionName = "tracker-enhanced";
+export const extensionFolderPath = "scripts/extensions/third-party/SillyTavern-Tracker-Enhanced";
 
-if (!extension_settings[extensionName.toLowerCase()]) extension_settings[extensionName.toLowerCase()] = {};
-export const extensionSettings = extension_settings[extensionName.toLowerCase()];
+if (!extension_settings[extensionName]) extension_settings[extensionName] = {};
+export const extensionSettings = extension_settings[extensionName];
 
 jQuery(async () => {
 	await initSettings();

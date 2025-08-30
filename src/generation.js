@@ -12,6 +12,23 @@ import { trackerFormat } from "./settings/defaultSettings.js";
 // #region Utility Functions
 
 /**
+ * Gets the profile ID for a given profile name.
+ * @param {string} profileName - The profile name.
+ * @returns {string|null} The profile ID or null if not found.
+ */
+function getProfileIdByName(profileName) {
+	const ctx = getContext();
+	const connectionManager = ctx.extensionSettings.connectionManager;
+	
+	if (profileName === "current") {
+		return connectionManager.selectedProfile;
+	}
+	
+	const profile = connectionManager.profiles.find(p => p.name === profileName);
+	return profile ? profile.id : null;
+}
+
+/**
  * Replaces `{{key}}` placeholders in a template string with provided values.
  * @param {string} template - The template string containing placeholders.
  * @param {Object} vars - An object of key-value pairs to replace in the template.
@@ -47,37 +64,75 @@ function conditionalSection(template, sectionName, condition, content) {
 // #endregion
 
 /**
- * A helper function to introduce a delay.
- * @param {number} ms - The delay in milliseconds.
- * @returns {Promise<void>}
+ * Sends a generation request using an independent connection profile.
+ * @param {string} prompt - The prompt to send.
+ * @param {number|null} maxTokens - Maximum tokens to generate.
+ * @returns {Promise<string>} The generated response.
  */
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-/**
- * Overrides the current connection profile and completion preset if they are not set to "current".
- * @param {string} profileName - The connection profile name.
- * @param {string} completionPresetName - The completion preset name.
- * @returns {Promise<null>}
- */
-async function changeProfileAndCompletionPreset(profileName, completionPresetName) {
-    const ctx = getContext();
-    let profileSwitched = false;
-
-    if (extensionSettings.selectedProfile !== "current") {
-        debug("changing connection profile to", profileName);
-        await ctx.executeSlashCommandsWithOptions(`/profile ${profileName}`);
-        profileSwitched = true;
-    }
-
-    if (extensionSettings.selectedCompletionPreset !== "current") {
-        debug("changing completion preset to", completionPresetName);
-        await ctx.executeSlashCommandsWithOptions(`/preset ${completionPresetName}`);
-    }
-
-    if (profileSwitched) {
-        debug("Delaying for 2000ms after profile switch to ensure connection is ready.");
-        await delay(2000);
-    }
+async function sendIndependentGenerationRequest(prompt, maxTokens = null) {
+	try {
+		log(`[Tracker Enhanced] 🚀 sendIndependentGenerationRequest called`);
+		
+		const ctx = getContext();
+		const profileId = getProfileIdByName(extensionSettings.selectedProfile);
+		
+		log(`[Tracker Enhanced] Selected profile: ${extensionSettings.selectedProfile}`);
+		log(`[Tracker Enhanced] Profile ID: ${profileId}`);
+		
+		if (!profileId) {
+			error(`[Tracker Enhanced] ❌ Profile not found: ${extensionSettings.selectedProfile}`);
+			throw new Error(`Profile not found: ${extensionSettings.selectedProfile}`);
+		}
+		
+		// Always use independent connection - even for "current" profile
+		log(`[Tracker Enhanced] 🔒 Using INDEPENDENT connection with profile: ${extensionSettings.selectedProfile} (ID: ${profileId})`);
+		log(`[Tracker Enhanced] This request will NOT interfere with SillyTavern's main connection`);
+		
+		// Check if ConnectionManagerRequestService is available
+		if (!ctx.ConnectionManagerRequestService) {
+			error(`[Tracker Enhanced] ❌ ConnectionManagerRequestService not available in context`);
+			error(`[Tracker Enhanced] Available context methods:`, Object.keys(ctx).filter(k => k.includes('Connection') || k.includes('generate')));
+			throw new Error('ConnectionManagerRequestService not available');
+		}
+		
+		log(`[Tracker Enhanced] ✅ ConnectionManagerRequestService is available`);
+		log(`[Tracker Enhanced] 📤 About to call ctx.ConnectionManagerRequestService.sendRequest`);
+		log(`[Tracker Enhanced] Parameters:`, { 
+			profileId, 
+			promptLength: prompt?.length || 0, 
+			maxTokens,
+			selectedCompletionPreset: extensionSettings.selectedCompletionPreset
+		});
+		
+		// Use ConnectionManagerRequestService from context
+		const response = await ctx.ConnectionManagerRequestService.sendRequest(
+			profileId,
+			[{ role: 'user', content: prompt }],
+			maxTokens || 1000,
+			{
+				extractData: true,
+				includePreset: extensionSettings.selectedCompletionPreset !== "current",
+			}
+		);
+		
+		log(`[Tracker Enhanced] 📥 Raw response from ConnectionManagerRequestService:`, response);
+		log(`[Tracker Enhanced] ✅ Independent connection request successful. Response length: ${response?.content?.length || 0} characters`);
+		
+		if (!response || !response.content) {
+			error(`[Tracker Enhanced] ❌ Invalid response from ConnectionManagerRequestService:`, response);
+			throw new Error('Invalid response from ConnectionManagerRequestService');
+		}
+		
+		return response.content;
+		
+	} catch (err) {
+		error(`[Tracker Enhanced] ❌ Failed to send independent generation request:`, err);
+		error(`[Tracker Enhanced] ❌ Error details:`, err.message);
+		error(`[Tracker Enhanced] ❌ Stack trace:`, err.stack);
+		
+		// Re-throw to be handled by calling function
+		throw err;
+	}
 }
 
 /**
@@ -89,31 +144,33 @@ async function changeProfileAndCompletionPreset(profileName, completionPresetNam
 export async function generateTracker(mesNum, includedFields = FIELD_INCLUDE_OPTIONS.DYNAMIC) {
 	if (mesNum == null || mesNum < 0 || chat[mesNum].extra?.isSmallSys) return null;
 
-	const ctx = getContext();
-	const presetManager = ctx.getPresetManager();
-	const connectionManagerSettings = ctx.extensionSettings.connectionManager;
-	const preselectedPreset = presetManager.getSelectedPresetName();
-	const preselectedProfile = connectionManagerSettings.profiles.find(x => x.id === connectionManagerSettings.selectedProfile).name;
+	log(`[Tracker Enhanced] 🚀 Starting tracker generation for message ${mesNum} using INDEPENDENT connection`);
+	debug(`[Tracker Enhanced] Selected profile: ${extensionSettings.selectedProfile}, Selected preset: ${extensionSettings.selectedCompletionPreset}`);
 
 	try {
-		await changeProfileAndCompletionPreset(extensionSettings.selectedProfile, extensionSettings.selectedCompletionPreset);
 		let tracker;
 
-		if (extensionSettings.generationMode == generationModes.TWO_STAGE) tracker = await generateTwoStageTracker(mesNum, includedFields);
-		else tracker = await generateSingleStageTracker(mesNum, includedFields);
-
-		await changeProfileAndCompletionPreset(preselectedProfile, preselectedPreset);
+		if (extensionSettings.generationMode == generationModes.TWO_STAGE) {
+			log(`[Tracker Enhanced] Using TWO-STAGE generation mode with independent connection`);
+			tracker = await generateTwoStageTracker(mesNum, includedFields);
+		} else {
+			log(`[Tracker Enhanced] Using SINGLE-STAGE generation mode with independent connection`);
+			tracker = await generateSingleStageTracker(mesNum, includedFields);
+		}
 
 		if (!tracker) return null;
 
 		const lastMesWithTrackerIndex = getLastMessageWithTracker(mesNum);
 		const lastMesWithTracker = chat[lastMesWithTrackerIndex];
 		let lastTracker = lastMesWithTracker ? lastMesWithTracker.tracker : getDefaultTracker(extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, OUTPUT_FORMATS.JSON);
-		return updateTracker(lastTracker, tracker, extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, OUTPUT_FORMATS.JSON, true);
+		const result = updateTracker(lastTracker, tracker, extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, OUTPUT_FORMATS.JSON, true);
+		
+		log(`[Tracker Enhanced] ✅ Tracker generation completed successfully using independent connection`);
+		return result;
 	} catch (e) {
-		error("Failed to generate tracker", e);
+		error(`[Tracker Enhanced] ❌ Failed to generate tracker using independent connection:`, e);
 		toastr.error("Failed to generate tracker. Make sure your selected connection profile and completion preset are valid and working");
-		await changeProfileAndCompletionPreset(preselectedProfile, preselectedPreset);
+		return null;
 	}
 }
 
@@ -132,7 +189,9 @@ async function generateSingleStageTracker(mesNum, includedFields, firstStageMess
 
 	// Generate tracker using the AI model
 	log("Generating tracker with prompts:", { systemPrompt, requestPrompt, responseLength, mesNum });
+	log(`[Tracker Enhanced] 🎯 SINGLE-STAGE: About to call sendGenerateTrackerRequest`);
 	const tracker = await sendGenerateTrackerRequest(systemPrompt, requestPrompt, responseLength);
+	log(`[Tracker Enhanced] 🎯 SINGLE-STAGE: sendGenerateTrackerRequest returned:`, tracker);
 
 	return tracker;
 }
@@ -152,10 +211,12 @@ async function generateTwoStageTracker(mesNum, includedFields) {
 	let responseLength = extensionSettings.responseLength > 0 ? extensionSettings.responseLength : null;
 
 	// Run the summarization stage to get the firstStageMessage
-	const message = await generateRaw(requestPrompt, null, false, false, systemPrompt, responseLength);
+	log(`[Tracker Enhanced] 📝 Stage 1/2: Message summarization using independent connection`);
+	const message = await sendIndependentGenerationRequest(systemPrompt + '\n\n' + requestPrompt, responseLength);
 	debug("Message Summarized:", { message });
 
 	// Generate tracker using the AI model in single-stage manner but with the first stage message
+	log(`[Tracker Enhanced] 🎯 Stage 2/2: Tracker generation using independent connection`);
 	const tracker = await generateSingleStageTracker(mesNum, includedFields, message);
 
 	return tracker;
@@ -168,24 +229,55 @@ async function generateTwoStageTracker(mesNum, includedFields) {
  * @param {number|null} responseLength
  */
 async function sendGenerateTrackerRequest(systemPrompt, requestPrompt, responseLength) {
-	let tracker = await generateRaw(requestPrompt, null, false, false, systemPrompt, responseLength);
-	debug("Generated tracker:", { tracker });
-
-	let newTracker;
+	log(`[Tracker Enhanced] 📤 Sending tracker generation request via independent connection`);
+	log(`[Tracker Enhanced] 🔧 About to call sendIndependentGenerationRequest...`);
+	
 	try {
-		if(extensionSettings.trackerFormat == trackerFormat.JSON) tracker = unescapeJsonString(tracker);
-		const trackerContent = tracker.match(/<(?:tracker|Tracker)>([\s\S]*?)<\/(?:tracker|Tracker)>/);
-		let result = trackerContent ? trackerContent[1].trim() : null;
-		if(extensionSettings.trackerFormat == trackerFormat.YAML) result = yamlToJSON(result);
-		newTracker = JSON.parse(result);
-	} catch (e) {
-		error("Failed to parse tracker:", tracker, e);
-		toastr.error("Failed to parse the generated tracker. Make sure your token count is not low or set the response length override.");
+		let tracker = await sendIndependentGenerationRequest(systemPrompt + '\n\n' + requestPrompt, responseLength);
+		log("Generated tracker:", { tracker });
+
+		let newTracker;
+		try {
+			if(extensionSettings.trackerFormat == trackerFormat.JSON) tracker = unescapeJsonString(tracker);
+			const trackerContent = tracker.match(/<(?:tracker|Tracker)>([\s\S]*?)<\/(?:tracker|Tracker)>/);
+			let result = trackerContent ? trackerContent[1].trim() : null;
+			if(extensionSettings.trackerFormat == trackerFormat.YAML) result = yamlToJSON(result);
+			newTracker = JSON.parse(result);
+			log(`[Tracker Enhanced] ✅ Successfully parsed tracker response from independent connection`);
+		} catch (e) {
+			error(`[Tracker Enhanced] ❌ Failed to parse tracker from independent connection:`, tracker, e);
+			toastr.error("Failed to parse the generated tracker. Make sure your token count is not low or set the response length override.");
+			return null;
+		}
+
+		log("Parsed tracker:", { newTracker });
+		return newTracker;
+		
+	} catch (err) {
+		error(`[Tracker Enhanced] ❌ sendIndependentGenerationRequest failed, falling back to old method:`, err);
+		
+		// Fallback to the old generateRaw method if independent connection fails
+		log(`[Tracker Enhanced] 🔄 Using fallback: generateRaw`);
+		let tracker = await generateRaw(systemPrompt + '\n\n' + requestPrompt, null, false, false, '', responseLength);
+		log("Generated tracker (fallback):", { tracker });
+
+		let newTracker;
+		try {
+			if(extensionSettings.trackerFormat == trackerFormat.JSON) tracker = unescapeJsonString(tracker);
+			const trackerContent = tracker.match(/<(?:tracker|Tracker)>([\s\S]*?)<\/(?:tracker|Tracker)>/);
+			let result = trackerContent ? trackerContent[1].trim() : null;
+			if(extensionSettings.trackerFormat == trackerFormat.YAML) result = yamlToJSON(result);
+			newTracker = JSON.parse(result);
+			log(`[Tracker Enhanced] ✅ Successfully parsed tracker response from fallback method`);
+		} catch (e) {
+			error(`[Tracker Enhanced] ❌ Failed to parse tracker from fallback method:`, tracker, e);
+			toastr.error("Failed to parse the generated tracker. Make sure your token count is not low or set the response length override.");
+			return null;
+		}
+
+		log("Parsed tracker (fallback):", { newTracker });
+		return newTracker;
 	}
-
-	debug("Parsed tracker:", { newTracker });
-
-	return newTracker;
 }
 
 // #region Tracker Prompt Functions

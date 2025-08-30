@@ -15,19 +15,27 @@
 
 			<!-- Connection Profile -->
 			<div class="tracker-block m-b-1 m-t-1">
-				<label for="tracker_enhanced_connection_profile">Connection Profile</label><br />
-				<small>Override connection profile for tracker generation:</small><br />
+				<label for="tracker_enhanced_connection_profile">🔒 Independent Connection Profile</label><br />
+				<small>
+					<strong>Independent Connection:</strong> Tracker Enhanced uses a separate, dedicated connection that <strong>does NOT interfere</strong> with SillyTavern's main connection.<br>
+					<strong>Recommended:</strong> Create a dedicated connection profile specifically for tracker generation to ensure optimal performance and avoid conflicts.<br>
+					<em>Note: Even "Same as current" uses an independent connection with the current profile's settings.</em>
+				</small><br />
 				<select id="tracker_enhanced_connection_profile" class="text_pole">
-					<option value="current">Same as current</option>
+					<option value="current">Same as current (Independent)</option>
 				</select>
 			</div>
 
 			<!-- Completion Preset -->
 			<div class="tracker-block m-b-1 m-t-1">
-				<label for="tracker_enhanced_completion_preset">Completion preset</label><br />
+				<label for="tracker_enhanced_completion_preset">🎯 Dedicated Completion Preset</label><br />
 				<small>
-					Override completion preset for tracker generation: <br />
-					(For Chat Completion Profiles, Make sure the preset has the same Chat completion Source as the profile)
+					<strong>Recommended:</strong> Create a dedicated completion preset optimized for tracker generation.<br>
+					<strong>Compatibility Indicators:</strong><br>
+					• <strong>✅</strong> Compatible - Matches your selected profile's API<br>
+					• <strong>⚠️</strong> May have compatibility issues - Use with caution<br>
+					• <strong>❌</strong> Likely incompatible - Different API, may cause errors<br>
+					<em>Tip: Use settings like higher temperature for more creative tracking or lower for consistent results.</em>
 				</small><br />
 				<select id="tracker_enhanced_completion_preset" class="text_pole">
 					<option value="current">Same as current</option>
@@ -193,6 +201,10 @@
 							>Define the HTML for the tracker preview displayed with each message. Use macros like:<br />
 							{{key.subkey}}, {{#join "delimiter" arrayKey}}, {{#foreach objectOrArrayKey itemName}}...{{itemName.subKey}}...{{/foreach}}, {{#if key.subkey}}...{{/if}}.</small
 						><br />
+						<div class="tracker-template-controls flex-container">
+							<input id="tracker_enhanced_generate_template" class="menu_button" type="submit" value="Generate Template" title="Generate HTML template based on current Prompt Maker fields" />
+							<small class="tracker-template-controls-hint">Click to auto-generate template from your Prompt Maker fields</small>
+						</div>
 						<textarea id="tracker_enhanced_mes_tracker_template" class="text_pole" rows="5"></textarea>
 					</div>
 					<div class="tracker-block m-b-1 m-t-1">
@@ -200,6 +212,10 @@
 						<small
 							>Define any custom javascript to be used in the tracker preview. The javascript should return an object with all the functions that can be accessed through SillyTavern.trackerEnhanced</small
 						><br />
+						<div class="tracker-template-controls flex-container">
+							<input id="tracker_enhanced_generate_javascript" class="menu_button" type="submit" value="Generate JavaScript" title="Generate JavaScript for gender-specific field hiding based on current Prompt Maker fields" />
+							<small class="tracker-template-controls-hint">Click to auto-generate JavaScript with gender-specific field hiding</small>
+						</div>
 						<textarea id="tracker_enhanced_mes_tracker_javascript" class="text_pole" rows="5"></textarea>
 					</div>
 					<!-- Prompt Maker Button -->
