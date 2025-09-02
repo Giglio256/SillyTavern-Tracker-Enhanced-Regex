@@ -308,3 +308,131 @@ Groups are stored as JSON files with the following structure:
    - Groups: `/api/groups/*`
    - Group Chats: `/api/chats/group/*`
    - All require authentication headers
+
+## Extension Import Patterns
+
+### Directory Structure Understanding
+The extension is located at:
+```
+public/scripts/extensions/third-party/SillyTavern-Tracker-Enhanced/
+```
+
+### Correct Import Paths
+When importing from extension files in subdirectories (e.g., `src/`, `src/ui/`), the relative paths are:
+
+**From files in `src/` directory:**
+- To `script.js`: `../../../../../script.js`
+- To `scripts/group-chats.js`: `../../../../group-chats.js`
+- To `scripts/tags.js`: `../../../../tags.js`
+- To `scripts/popup.js`: `../../../../popup.js`
+
+**From files in `src/ui/` directory:**
+- To `script.js`: `../../../../../../script.js`
+- To `scripts/group-chats.js`: `../../../../../group-chats.js`
+- To `scripts/tags.js`: `../../../../../tags.js`
+- To `scripts/popup.js`: `../../../../../popup.js`
+
+**From `index.js` (extension root):**
+- To `script.js`: `../../../../script.js`
+- To `scripts/extensions.js`: `../../../../../../scripts/extensions.js`
+
+### Import Pattern Rules
+1. **Core Script**: `script.js` is at the root (`public/`)
+2. **Scripts Modules**: Most modules are in `public/scripts/`
+3. **Extensions**: Extensions are in `public/scripts/extensions/`
+4. **Third-Party**: Third-party extensions are in `public/scripts/extensions/third-party/`
+
+### Path Calculation Example
+From: `public/scripts/extensions/third-party/SillyTavern-Tracker-Enhanced/src/sillyTavernHelper.js`
+To: `public/script.js`
+Path: Go up 5 levels (`../../../../../script.js`)
+
+From: `public/scripts/extensions/third-party/SillyTavern-Tracker-Enhanced/src/ui/developmentTestUI.js`
+To: `public/scripts/popup.js`
+Path: Go up 5 levels to scripts (`../../../../../popup.js`)
+
+### Common Import Mistakes and Fixes
+
+#### 1. Wrong Module Sources
+**Mistake**: Importing `humanizedDateTime` from `script.js`
+**Fix**: Import from `RossAscends-mods.js` instead
+```javascript
+// Wrong
+import { humanizedDateTime } from '../../../../../script.js';
+
+// Correct
+import { humanizedDateTime } from '../../../../RossAscends-mods.js';
+```
+
+#### 2. Incorrect DOM Selectors
+**Mistake**: Using `extensionName` variable for DOM IDs when HTML uses different naming
+**Fix**: Check actual HTML IDs in settings.html
+```javascript
+// Wrong
+document.querySelector(`#${extensionName}_settings`); // looks for #tracker-enhanced_settings
+
+// Correct
+document.querySelector('#tracker_enhanced_settings'); // matches actual HTML ID
+```
+
+#### 3. Global Variables
+**Note**: Some utilities like `toastr` are available globally in SillyTavern
+```javascript
+// Access global toastr
+const toastr = window.toastr;
+```
+
+## Development Session Summary (2025-09-02)
+
+### Objectives Completed
+
+#### 1. Created SillyTavern Helper System
+**Location**: `src/sillyTavernHelper.js`
+- Comprehensive helper class for character and group management
+- Methods for CRUD operations on characters using TavernCard V2 format
+- Group management functions (create, add/remove members, convert solo to group)
+- Proper API integration with authentication headers
+
+#### 2. Added Test Data
+**Location**: `src/settings/defaultSettings.js`
+- `testTavernCardV2`: Complete character card with all fields for testing
+- `testGroupData`: Group configuration for testing group operations
+- Ready-to-use test data eliminates need for manual input during development
+
+#### 3. Created Development Test UI
+**Location**: `src/ui/developmentTestUI.js`
+- Collapsible "Development Test" section in extension settings
+- Organized buttons for all helper functions:
+  - Character Management: Create, Read, Edit, Delete
+  - Group Management: Create, Add/Remove Members, Convert to Group
+  - Status Display: List characters/groups, show current status
+- Built-in console for operation logging with timestamps
+- Visual feedback through toastr notifications
+
+#### 4. Fixed Extension Loading Issues
+- Corrected import paths for SillyTavern modules
+- Fixed module export issues (humanizedDateTime from correct source)
+- Fixed DOM selector to match actual HTML structure
+- Documented all import patterns for future reference
+
+### Key Learnings
+
+1. **Import Path Structure**: Extensions in `third-party` folder need careful path calculation
+2. **Module Exports**: Not all functions are in `script.js` - check actual export locations
+3. **DOM Integration**: Always verify actual HTML IDs vs. variable-based assumptions
+4. **Global Scope**: Some utilities (toastr) are globally available in SillyTavern
+
+### Usage Instructions
+
+1. Open SillyTavern and navigate to Extensions settings
+2. Find "Tracker Enhanced" and expand it
+3. Scroll down to find "Development Test" section
+4. Use the buttons to test character/group operations
+5. Monitor the console output for detailed logs
+
+### Future Development Notes
+
+- The helper class provides a clean API for any tracker features needing character/group interaction
+- Test data can be extended for more complex scenarios
+- Development UI can be hidden in production or moved to a debug mode
+- All operations respect SillyTavern's data integrity and use proper APIs

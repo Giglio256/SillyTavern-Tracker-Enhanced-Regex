@@ -13,7 +13,8 @@
       "Read(E:\\SillyTavern\\public\\scripts/**)",
       "Read(E:\\SillyTavern\\public\\scripts/**)",
       "Read(E:\\SillyTavern\\public\\scripts/**)",
-      "Read(E:\\SillyTavern/**)"
+      "Read(E:\\SillyTavern/**)",
+      "Read(E:\\SillyTavern\\public\\scripts\\extensions/**)"
     ],
     "deny": [],
     "ask": []
