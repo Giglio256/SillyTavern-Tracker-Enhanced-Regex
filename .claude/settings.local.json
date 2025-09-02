@@ -14,7 +14,8 @@
       "Read(E:\\SillyTavern\\public\\scripts/**)",
       "Read(E:\\SillyTavern\\public\\scripts/**)",
       "Read(E:\\SillyTavern/**)",
-      "Read(E:\\SillyTavern\\public\\scripts\\extensions/**)"
+      "Read(E:\\SillyTavern\\public\\scripts\\extensions/**)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

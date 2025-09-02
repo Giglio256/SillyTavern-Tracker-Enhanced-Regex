@@ -415,12 +415,24 @@ const toastr = window.toastr;
 - Fixed DOM selector to match actual HTML structure
 - Documented all import patterns for future reference
 
+#### 5. Enhanced Group Integration with createAndJoin (Latest)
+**Location**: `src/sillyTavernHelper.js:412-486`, `src/ui/developmentTestUI.js:82-85, 441-462`
+- Added `createAndJoin` method that creates character and handles group integration automatically
+- **Smart Context Handling**:
+  - If in solo chat: Converts to group, switches to new group chat, adds character
+  - If in group chat: Simply adds new character to current group
+- **Chat Switching**: Integrates with SillyTavern's `openGroupById` for seamless group transition
+- **Enhanced Development UI**: Added "Create & Join Group" test button with detailed logging
+- **Comprehensive Error Handling**: Reports success/failure at each step with context
+- **Return Values**: Provides detailed information about character creation, group status, and chat switching
+
 ### Key Learnings
 
 1. **Import Path Structure**: Extensions in `third-party` folder need careful path calculation
 2. **Module Exports**: Not all functions are in `script.js` - check actual export locations
 3. **DOM Integration**: Always verify actual HTML IDs vs. variable-based assumptions
 4. **Global Scope**: Some utilities (toastr) are globally available in SillyTavern
+5. **Group Conversion Process**: SillyTavern's `convertSoloToGroupChat` and `openGroupById` work together to provide seamless chat switching - extensions should follow this pattern for consistent user experience
 
 ### Usage Instructions
 

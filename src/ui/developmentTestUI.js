@@ -79,6 +79,10 @@ export class DevelopmentTestUI {
                                     <i class="fa-solid fa-people-group"></i>
                                     <span>Convert to Group Chat</span>
                                 </button>
+                                <button id="tracker_dev_create_and_join" class="menu_button menu_button_icon">
+                                    <i class="fa-solid fa-user-group"></i>
+                                    <span>Create & Join Group</span>
+                                </button>
                             </div>
                         </div>
                         
@@ -166,6 +170,7 @@ export class DevelopmentTestUI {
         document.getElementById('tracker_dev_add_member')?.addEventListener('click', () => this.addMemberToGroup());
         document.getElementById('tracker_dev_remove_member')?.addEventListener('click', () => this.removeMemberFromGroup());
         document.getElementById('tracker_dev_convert_solo')?.addEventListener('click', () => this.convertToGroup());
+        document.getElementById('tracker_dev_create_and_join')?.addEventListener('click', () => this.createAndJoinGroup());
 
         // Info Display
         document.getElementById('tracker_dev_list_chars')?.addEventListener('click', () => this.listAllCharacters());
@@ -431,5 +436,28 @@ export class DevelopmentTestUI {
         };
         
         this.log('Current chat status:', status);
+    }
+
+    static async createAndJoinGroup() {
+        this.log('Creating character and joining group...');
+        
+        const result = await SillyTavernHelper.createAndJoin(testTavernCardV2);
+        
+        if (result.success) {
+            this.log(`✅ Create and join successful:`, {
+                character: result.characterName,
+                group: result.group ? result.group.name : 'existing group',
+                switched: result.switched || false
+            });
+            
+            const message = result.switched 
+                ? `Character "${testTavernCardV2.name}" created, converted to group, and switched to group chat!`
+                : `Character "${testTavernCardV2.name}" created and added to current group!`;
+                
+            toastr?.success(message) || alert(message);
+        } else {
+            this.log(`❌ Create and join failed: ${result.error}`);
+            toastr?.error(`Create and join failed: ${result.error}`) || alert(`Create and join failed: ${result.error}`);
+        }
     }
 }

@@ -25,7 +25,8 @@ import {
     group_activation_strategy,
     group_generation_mode,
     DEFAULT_AUTO_MODE_DELAY,
-    getGroups
+    getGroups,
+    openGroupById
 } from '../../../../group-chats.js';
 
 import { createTagMapFromList } from '../../../../tags.js';
@@ -406,5 +407,81 @@ export class SillyTavernHelper {
     static getCurrentCharacter() {
         if (this_chid === undefined) return null;
         return characters[this_chid] || null;
+    }
+
+    /**
+     * Create a character and join current/new group
+     * If in solo chat, converts to group and switches to it
+     * If in group chat, just adds the new character to current group
+     * @param {Object} characterData - TavernCard V2 formatted data
+     * @returns {Promise<{success: boolean, characterName?: string, group?: Object, switched?: boolean, error?: string}>}
+     */
+    static async createAndJoin(characterData) {
+        try {
+            // First create the character
+            const createResult = await this.createCharacter(characterData);
+            if (!createResult.success) {
+                return createResult;
+            }
+
+            const characterAvatar = createResult.characterName;
+            let group = null;
+            let switched = false;
+
+            if (selected_group) {
+                // Already in a group, just add the character
+                const addResult = await this.addGroupMember(selected_group, characterAvatar);
+                if (!addResult.success) {
+                    return { 
+                        success: false, 
+                        error: `Character created but failed to add to group: ${addResult.error}`,
+                        characterName: characterAvatar 
+                    };
+                }
+                
+                group = groups.find(g => g.id === selected_group);
+            } else {
+                // In solo chat, convert to group first
+                const convertResult = await this.convertSoloToGroup();
+                if (!convertResult.success) {
+                    return { 
+                        success: false, 
+                        error: `Character created but failed to convert to group: ${convertResult.error}`,
+                        characterName: characterAvatar 
+                    };
+                }
+
+                group = convertResult.group;
+
+                // Switch to the new group
+                const switchResult = await openGroupById(group.id);
+                if (switchResult !== false) {
+                    switched = true;
+                }
+
+                // Add the new character to the group
+                const addResult = await this.addGroupMember(group.id, characterAvatar);
+                if (!addResult.success) {
+                    return { 
+                        success: false, 
+                        error: `Character created and group converted but failed to add character: ${addResult.error}`,
+                        characterName: characterAvatar,
+                        group: group,
+                        switched: switched
+                    };
+                }
+            }
+
+            return { 
+                success: true, 
+                characterName: characterAvatar,
+                group: group,
+                switched: switched
+            };
+
+        } catch (error) {
+            console.error('Error in createAndJoin:', error);
+            return { success: false, error: error.message };
+        }
     }
 }
