@@ -8,6 +8,7 @@ import { generationCaptured } from "../../lib/interconnection.js";
 import { TrackerPromptMakerModal } from "../ui/trackerPromptMakerModal.js";
 import { TrackerTemplateGenerator } from "../ui/components/trackerTemplateGenerator.js";
 import { TrackerJavaScriptGenerator } from "../ui/components/trackerJavaScriptGenerator.js";
+import { DevelopmentTestUI } from "../ui/developmentTestUI.js";
 
 export { generationModes, generationTargets, trackerFormat } from "./defaultSettings.js";
 
@@ -97,6 +98,10 @@ async function loadSettingsUI() {
 		setSettingsInitialValues();
 		registerSettingsListeners();
 		updateFieldVisibility(extensionSettings.generationMode);
+		
+		// Initialize Development Test UI
+		DevelopmentTestUI.init();
+		
 		debug("Settings UI initialization completed");
 	} catch (error) {
 		error("Failed to load settings UI:", error);
