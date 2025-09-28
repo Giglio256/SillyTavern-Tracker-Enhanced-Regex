@@ -157,16 +157,38 @@ export class TrackerInterface {
         this.contentArea.append(loadingIndicator);
         this.disableControls(true);
 
+        const targetMesId = Number.isInteger(this.mesId) && this.mesId >= 0 ? this.mesId : null;
+        const targetExists = targetMesId !== null && chat[targetMesId];
+
+        if (!targetExists) {
+            toastr.info('No chat message is associated with this tracker yet. Send or select a message before regenerating.');
+            this.refreshContent(this.mode);
+            this.disableControls(false);
+            return;
+        }
+
+        const previousMesId = getPreviousNonSystemMessageIndex(targetMesId);
+        if (previousMesId === -1) {
+            toastr.info('Need at least one prior non-system message before the tracker can be regenerated.');
+            this.refreshContent(this.mode);
+            this.disableControls(false);
+            return;
+        }
+
         try {
-            // Placeholder for actual regeneration logic
-			const previousMesId = getPreviousNonSystemMessageIndex(this.mesId);
             const newTracker = await generateTracker(previousMesId, fieldIncludeOption);
-            let trackerUpdated;
+            if (!newTracker) {
+                toastr.warning('Tracker generation returned no data. Try again after additional chat context.');
+                this.refreshContent(this.mode);
+                return;
+            }
+
+            let trackerUpdated = newTracker;
 
             if (this.onSave) {
                 trackerUpdated = await this.onSave(newTracker);
             }
-            this.tracker = trackerUpdated;
+            this.tracker = trackerUpdated ?? newTracker;
             this.refreshContent(this.mode);
         } catch (e) {
             toastr.error('Regeneration failed. Please try again.');
@@ -218,6 +240,29 @@ export class TrackerInterface {
      * This method adds the tracker buttons to the UI and sets up event handlers.
      */
     static initializeTrackerButtons() {
+        const openTrackerInterface = (requestedMesId = null) => {
+            let mesId = Number.isInteger(requestedMesId) && requestedMesId >= 0 ? requestedMesId : getLastMessageWithTracker();
+
+            if (!Number.isInteger(mesId) || mesId < 0 || !chat[mesId]) {
+                mesId = getLastNonSystemMessageIndex();
+            }
+
+            if (!Number.isInteger(mesId) || mesId < 0 || !chat[mesId]) {
+                toastr.info('No chat messages are available yet for tracker editing. Send a message first.');
+                return;
+            }
+
+            const mesTracker = chat[mesId]?.tracker || {};
+            const trackerData = getTracker(mesTracker, extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, true, OUTPUT_FORMATS.JSON);
+            const onSave = async (updatedTracker) => {
+                debug("Saving Tracker", {updatedTracker, mesId});
+                return await saveTracker(updatedTracker, extensionSettings.trackerDef, mesId, true);
+            };
+            const trackerInterface = new TrackerInterface();
+            trackerInterface.init(trackerData, mesId, onSave);
+            trackerInterface.show();
+        };
+
         // Add Tracker button to the extensions menu
         const trackerInterfaceButton = $(`
             <div class="extension_container interactable" id="tracker_ui_container" tabindex="0">
@@ -230,18 +275,7 @@ export class TrackerInterface {
         $("#extensionsMenu").append(trackerInterfaceButton);
 
         // Tracker UI button event
-        $("#tracker-ui-item").on("click", () => {
-            const lastMesId = getLastMessageWithTracker();
-            const mes = chat[lastMesId]?.tracker || {};
-            const trackerData = getTracker(mes, extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, true, OUTPUT_FORMATS.JSON);
-            const onSave = async (updatedTracker) => {
-                debug("Saving Tracker", {updatedTracker, lastMesId});
-                return await saveTracker(updatedTracker, extensionSettings.trackerDef, lastMesId, true);
-            };
-            const trackerInterface = new TrackerInterface();
-            trackerInterface.init(trackerData, lastMesId, onSave);
-            trackerInterface.show();
-        });
+        $("#tracker-ui-item").on("click", () => openTrackerInterface());
 
         // Add tracker button to message template
         const showMessageTrackerButton = $(`
@@ -253,16 +287,8 @@ export class TrackerInterface {
         $(document).on("click", ".mes_tracker_button", function () {
             const messageBlock = $(this).closest(".mes");
             const mesId = Number(messageBlock.attr("mesid"));
-            const mes = chat[mesId]?.tracker || {};
-            const trackerData = getTracker(mes, extensionSettings.trackerDef, FIELD_INCLUDE_OPTIONS.ALL, true, OUTPUT_FORMATS.JSON);
-            debug("Message Tracker Data", {mesId, mes, trackerData});
-            const onSave = async (updatedTracker) => {
-                debug("Saving Tracker", {updatedTracker, mesId});
-                return await saveTracker(updatedTracker, extensionSettings.trackerDef, mesId, true);
-            };
-            const trackerInterface = new TrackerInterface();
-            trackerInterface.init(trackerData, mesId, onSave);
-            trackerInterface.show();
+            debug("Message Tracker Data", {mesId});
+            openTrackerInterface(mesId);
         });
     }
 }

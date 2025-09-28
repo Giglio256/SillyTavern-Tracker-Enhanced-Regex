@@ -2,6 +2,13 @@
 
 An advanced, feature-rich tracker extension for SillyTavern that provides comprehensive character and scene monitoring with intelligent automation, drag-and-drop field management, and dynamic template generation.
 
+## Changelog
+28-09-2025
+- No longer automatically send a tracker generation request when you merely open an old chat.
+   - This is because SillyTavern uses dry-run during reconstruction of a chat page when you open an old chat. The extension treated it as a real new message. The original likely behaved the same way; I just added a guard.
+   - This should save one tracker generation every time you open an old chat.
+- Added groundwork for the upcoming narrative lifecycle system (character birth → growth → death) in `src/sillyTavernHelper.js` and `src/ui/developmentTestUI.js`.
+
 ## 🚀 Enhanced Features
 
 This enhanced version significantly expands upon the original tracker with major improvements and new capabilities:
@@ -44,15 +51,8 @@ This enhanced version significantly expands upon the original tracker with major
 3. Click **"Generate JavaScript"** to create hiding logic
 4. Fields will automatically hide based on character gender
 
-### 4. **Advanced Configuration**
-- **Presets**: Save complete configurations for different story types
-- **Generation Modes**: Choose between Inline, Single-Stage, or Two-Stage generation
-- **Custom Templates**: Modify HTML/JavaScript for specific formatting needs
-- **Smart Preset Compatibility**: Visual indicators show preset compatibility with your selected connection profile
-- **Debug Mode**: Enable detailed logging for troubleshooting
-
-### 5. **Understanding Preset Compatibility**
-Unlike the original tracker which forces you to use a matching conncetion profile and completion preset.    
+### 4. **Understanding Preset Compatibility**
+Unlike the original tracker which forces you to use a matching connection profile and completion preset.    
 I have unlinked them to give you maximum flexibility with fair warnings.     
 When selecting a "Dedicated Completion Preset", you'll see compatibility indicators:
 - **✅ Compatible**: Preset matches your connection profile's API - recommended for best results
@@ -64,7 +64,6 @@ When selecting a "Dedicated Completion Preset", you'll see compatibility indicat
 ## 📚 **Migration from Original**
 
 - I recommend using only the original or my enhanced version - choose one. 
-- If you keep both, you will probably see two tracker infos. They should not conflict because of unique IDs and labels.
 
 ## 🛠️ **Troubleshooting**
 
@@ -74,13 +73,13 @@ When selecting a "Dedicated Completion Preset", you'll see compatibility indicat
 - **Connection issues**: The enhanced version uses independent connections - no interference
 - **Template errors**: Use "Generate Template" to create properly formatted HTML
 - **Preset compatibility warnings**: Choose presets with ✅ indicators for best results, or create new presets optimized for your connection profile
-
-### Debug Mode:
-Enable debug mode in settings to see detailed logs of:
-- Field generation process
-- Template compilation
-- Gender-specific hiding logic
-- Connection status and API calls
+- **Token cost too high**: 
+   - There is no reason to use your expensive LLM API such as gemini or claude for the tracker. Keep them for the main connection and use a cheap one like deepseek for tracker. 
+   - The default "Number of Recent Messages to Include" is 5, which on average uses about 9k tokens per tracker generation in my use case. This also depends on how long your messages are on average. Reduce the number of messages to include if you find it too high. 
+   - If you keep the default, for every 100 messages, the tracker will use about 1m tokens; for DeepSeek that's about $0.30. 
+- **Something else breaks**: 
+   - 99% of the time, it's your connection profile problem. Use something clean with no extra prompts. 
+   - For conflicts with other extensions, please don't report to me. It's not fair. I fork this for my own use. Fork your own and do whatever you want.  
 
 ## 📜 **Credits**
 
