@@ -27,6 +27,210 @@ function getProfileIdByName(profileName) {
 	const profile = connectionManager.profiles.find(p => p.name === profileName);
 	return profile ? profile.id : null;
 }
+/**
+ * Gets the connection profile object for a given profile ID.
+ * @param {string} profileId - The profile ID.
+ * @returns {import("../../../../../scripts/extensions/connection-manager/index.js").ConnectionProfile|null}
+ */
+function getProfileById(profileId) {
+	if (!profileId) {
+		return null;
+	}
+
+	const ctx = getContext();
+	const connectionManager = ctx.extensionSettings.connectionManager;
+	return connectionManager.profiles.find((p) => p.id === profileId) || null;
+}
+
+/**
+ * Determines which completion preset should be applied for the current request.
+ * @param {import("../../../../../scripts/extensions/connection-manager/index.js").ConnectionProfile|null} profile - Active connection profile.
+ * @param {string} selectedPresetSetting - Preset selector from extension settings.
+ * @returns {{ includePreset: boolean, presetName: string|null, source: string, preset: object|null, apiType: string|null }}
+ */
+function resolveCompletionPreset(profile, selectedPresetSetting) {
+	if (!profile) {
+		return { includePreset: false, presetName: null, source: "no-profile", preset: null, apiType: null };
+	}
+
+	const ctx = getContext();
+	const desiredPreset = selectedPresetSetting || "current";
+	let apiMap = null;
+
+	try {
+		apiMap = ctx.ConnectionManagerRequestService.validateProfile(profile);
+	} catch (err) {
+		warn("[Tracker Enhanced] Failed to validate profile for preset resolution:", err);
+	}
+
+	const apiType = apiMap?.selected ?? null;
+	const presetManager = apiType ? ctx.getPresetManager?.(apiType) : null;
+
+	const getProfilePreset = () => {
+		if (!profile.preset || !presetManager) {
+			return { presetName: profile.preset ?? null, preset: null };
+		}
+
+		const preset = presetManager.getCompletionPresetByName?.(profile.preset) ?? null;
+		if (!preset) {
+			warn(`[Tracker Enhanced] Profile preset "${profile.preset}" not found for API ${apiType}; tracker will run without preset overrides.`);
+		}
+
+		return { presetName: profile.preset, preset };
+	};
+
+	if (desiredPreset === "current") {
+		const { presetName, preset } = getProfilePreset();
+		return {
+			includePreset: !!presetName,
+			presetName: presetName || null,
+			source: preset ? "profile" : "profile-missing",
+			preset,
+			apiType,
+		};
+	}
+
+	if (!presetManager) {
+		warn("[Tracker Enhanced] No preset manager available; falling back to profile preset.");
+		const { presetName, preset } = getProfilePreset();
+		return {
+			includePreset: !!presetName,
+			presetName: presetName || null,
+			source: preset ? "profile" : "profile-missing",
+			preset,
+			apiType,
+		};
+	}
+
+	const explicitPreset = presetManager.getCompletionPresetByName?.(desiredPreset) ?? null;
+	if (explicitPreset) {
+		return {
+			includePreset: true,
+			presetName: desiredPreset,
+			source: "explicit",
+			preset: explicitPreset,
+			apiType,
+		};
+	}
+
+	warn(`[Tracker Enhanced] Preset "${desiredPreset}" not found for API ${apiType}; falling back to profile preset.`);
+	const { presetName, preset } = getProfilePreset();
+	return {
+		includePreset: !!presetName,
+		presetName: presetName || null,
+		source: preset ? "profile-fallback" : "profile-missing",
+		preset,
+		apiType,
+	};
+}
+
+function pickPresetValue(preset, keys) {
+	if (!preset || !Array.isArray(keys)) return undefined;
+	for (const key of keys) {
+		if (Object.prototype.hasOwnProperty.call(preset, key)) {
+			const value = preset[key];
+			if (value !== undefined && value !== null && value !== "") {
+				return value;
+			}
+		}
+	}
+	return undefined;
+}
+
+function coerceNumber(value) {
+	if (value === undefined || value === null || value === "") {
+		return undefined;
+	}
+	const number = Number(value);
+	return Number.isFinite(number) ? number : undefined;
+}
+
+function sanitizeStopValue(value) {
+	if (Array.isArray(value)) {
+		return value
+			.map((entry) => (typeof entry === "string" ? entry.trim() : entry))
+			.filter((entry) => entry !== undefined && entry !== null && entry !== "");
+	}
+	if (typeof value === "string") {
+		const trimmed = value.trim();
+		if (!trimmed) return undefined;
+		const parts = trimmed.split(/\r?\n|\|\|/).map((entry) => entry.trim()).filter((entry) => entry);
+		return parts.length ? parts : undefined;
+	}
+	return undefined;
+}
+
+function buildPresetOverridePayload(apiType, preset) {
+	if (!preset || !apiType) {
+		return {};
+	}
+	const overrides = {};
+	const assignNumber = (targetKey, keys) => {
+		const raw = pickPresetValue(preset, keys);
+		const num = coerceNumber(raw);
+		if (num !== undefined) {
+			overrides[targetKey] = num;
+		}
+	};
+	const assignValue = (targetKey, keys) => {
+		const value = pickPresetValue(preset, keys);
+		if (value !== undefined) {
+			overrides[targetKey] = value;
+		}
+	};
+	switch (apiType) {
+		case "openai": {
+			assignNumber("temperature", ["temperature", "temp", "temp_openai"]);
+			assignNumber("top_p", ["top_p", "top_p_openai"]);
+			assignNumber("top_k", ["top_k", "top_k_openai"]);
+			assignNumber("top_a", ["top_a", "top_a_openai"]);
+			assignNumber("min_p", ["min_p", "min_p_openai"]);
+			assignNumber("presence_penalty", ["presence_penalty", "pres_pen_openai"]);
+			assignNumber("frequency_penalty", ["frequency_penalty", "freq_pen_openai"]);
+			assignNumber("repetition_penalty", ["repetition_penalty", "repetition_penalty_openai"]);
+			assignNumber("seed", ["seed", "seed_openai"]);
+			assignNumber("n", ["n"]);
+			assignValue("logit_bias", ["logit_bias"]);
+			const maxTokens = coerceNumber(pickPresetValue(preset, ["max_tokens", "openai_max_tokens", "max_response_tokens"]));
+			if (maxTokens !== undefined) {
+				overrides.max_tokens = maxTokens;
+			}
+			const stop = sanitizeStopValue(pickPresetValue(preset, ["stop", "stop_sequences", "custom_stop_sequences"]));
+			if (stop) {
+				overrides.stop = stop;
+			}
+			break;
+		}
+		case "textgenerationwebui": {
+			assignNumber("temperature", ["temperature", "temp"]);
+			assignNumber("top_p", ["top_p"]);
+			assignNumber("top_k", ["top_k"]);
+			assignNumber("top_a", ["top_a"]);
+			assignNumber("typical_p", ["typical_p"]);
+			assignNumber("tfs", ["tfs"]);
+			assignNumber("epsilon_cutoff", ["epsilon_cutoff"]);
+			assignNumber("eta_cutoff", ["eta_cutoff"]);
+			assignNumber("min_p", ["min_p"]);
+			assignNumber("penalty_alpha", ["penalty_alpha"]);
+			assignNumber("repetition_penalty", ["repetition_penalty", "rep_pen"]);
+			assignNumber("frequency_penalty", ["frequency_penalty", "freq_pen"]);
+			assignNumber("presence_penalty", ["presence_penalty", "presence_pen"]);
+			const maxTokens = coerceNumber(pickPresetValue(preset, ["max_tokens", "max_length", "max_new_tokens"]));
+			if (maxTokens !== undefined) {
+				overrides.max_tokens = maxTokens;
+			}
+			const stop = sanitizeStopValue(pickPresetValue(preset, ["stop", "stop_sequences", "stop_strings"]));
+			if (stop) {
+				overrides.stop = stop;
+			}
+			break;
+		}
+		default:
+			break;
+	}
+	return overrides;
+}
+
 
 /**
  * Replaces `{{key}}` placeholders in a template string with provided values.
@@ -75,13 +279,33 @@ async function sendIndependentGenerationRequest(prompt, maxTokens = null) {
 		
 		const ctx = getContext();
 		const profileId = getProfileIdByName(extensionSettings.selectedProfile);
+		const profile = getProfileById(profileId);
 		
 		log(`[Tracker Enhanced] Selected profile: ${extensionSettings.selectedProfile}`);
 		log(`[Tracker Enhanced] Profile ID: ${profileId}`);
 		
-		if (!profileId) {
+		if (!profileId || !profile) {
 			error(`[Tracker Enhanced] ❌ Profile not found: ${extensionSettings.selectedProfile}`);
 			throw new Error(`Profile not found: ${extensionSettings.selectedProfile}`);
+		}
+		
+		const { includePreset, presetName, source: presetSource, preset: resolvedPreset, apiType } = resolveCompletionPreset(profile, extensionSettings.selectedCompletionPreset);
+		const originalPreset = profile.preset;
+		const shouldOverridePreset = includePreset && presetName && profile.preset !== presetName;
+		if (shouldOverridePreset) {
+			profile.preset = presetName;
+		}
+		const overridePayload = includePreset && resolvedPreset ? buildPresetOverridePayload(apiType, resolvedPreset) : {};
+		
+		debug(`[Tracker Enhanced] Completion preset resolution`, {
+			desired: extensionSettings.selectedCompletionPreset,
+			resolved: presetName,
+			includePreset,
+			presetSource,
+			apiType,
+		});
+		if (Object.keys(overridePayload).length > 0) {
+			debug("[Tracker Enhanced] Applying preset override payload", overridePayload);
 		}
 		
 		// Always use independent connection - even for "current" profile
@@ -90,6 +314,9 @@ async function sendIndependentGenerationRequest(prompt, maxTokens = null) {
 		
 		// Check if ConnectionManagerRequestService is available
 		if (!ctx.ConnectionManagerRequestService) {
+			if (shouldOverridePreset) {
+				profile.preset = originalPreset;
+			}
 			error(`[Tracker Enhanced] ❌ ConnectionManagerRequestService not available in context`);
 			error(`[Tracker Enhanced] Available context methods:`, Object.keys(ctx).filter(k => k.includes('Connection') || k.includes('generate')));
 			throw new Error('ConnectionManagerRequestService not available');
@@ -101,19 +328,33 @@ async function sendIndependentGenerationRequest(prompt, maxTokens = null) {
 			profileId, 
 			promptLength: prompt?.length || 0, 
 			maxTokens,
-			selectedCompletionPreset: extensionSettings.selectedCompletionPreset
+			includePreset,
+			includeInstruct: false,
+			resolvedPreset: presetName,
+			presetSource,
+			apiType,
+			overrideKeys: Object.keys(overridePayload),
 		});
 		
-		// Use ConnectionManagerRequestService from context
-		const response = await ctx.ConnectionManagerRequestService.sendRequest(
+		let response;
+		try {
+			// Use ConnectionManagerRequestService from context
+			response = await ctx.ConnectionManagerRequestService.sendRequest(
 			profileId,
 			[{ role: 'user', content: prompt }],
 			maxTokens || 1000,
 			{
 				extractData: true,
-				includePreset: extensionSettings.selectedCompletionPreset !== "current",
-			}
+				includePreset,
+				includeInstruct: false,
+			},
+			overridePayload
 		);
+		} finally {
+			if (shouldOverridePreset) {
+				profile.preset = originalPreset;
+			}
+		}
 		
 		log(`[Tracker Enhanced] 📥 Raw response from ConnectionManagerRequestService:`, response);
 		log(`[Tracker Enhanced] ✅ Independent connection request successful. Response length: ${response?.content?.length || 0} characters`);

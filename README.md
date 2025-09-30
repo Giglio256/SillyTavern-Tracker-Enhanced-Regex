@@ -3,6 +3,15 @@
 An advanced, feature-rich tracker extension for SillyTavern that provides comprehensive character and scene monitoring with intelligent automation, drag-and-drop field management, and dynamic template generation.
 
 ## Changelog
+
+01-10-2025
+- Clean up connection profile/completion preset usages.
+- Tracker now reuses completion presets end-to-end, copying temperature, top_p/top_k, penalties, stop strings, and max tokens into the independent request.
+- Tracker requests now disable instruct templates so only the extension prompt is sent. 
+- Here is a clarifation of what is actually being used or ignored:
+  - Uses: API/model selection, connection profile proxy settings, and completion preset knobs (temperature, top_p/top_k, penalties, stop strings, max tokens).
+  - Ignores: preset prompt snippets, instruct templates, and context-size hints (tracker builds its own prompt and leaves instruct off).
+
 28-09-2025
 - No longer automatically send a tracker generation request when you merely open an old chat.
    - This is because SillyTavern uses dry-run during reconstruction of a chat page when you open an old chat. The extension treated it as a real new message. The original likely behaved the same way; I just added a guard.
@@ -23,6 +32,7 @@ This enhanced version significantly expands upon the original tracker with major
 ### 🔄 **Independent Connection System**  
 - **Non-Disruptive Operation**: Maintains separate connection from main SillyTavern API
 - **No Connection Interference**: Never switches or interrupts your primary chat connection
+- **Profile Transport Reuse**: Borrow the profile's API/model settings while keeping the main chat pipeline untouched
 - **Reliable Background Processing**: Stable tracker generation without affecting chat flow
 - **Smart Connection Management**: Automatic fallback and recovery mechanisms
 
@@ -52,8 +62,10 @@ This enhanced version significantly expands upon the original tracker with major
 4. Fields will automatically hide based on character gender
 
 ### 4. **Understanding Preset Compatibility**
-Unlike the original tracker which forces you to use a matching connection profile and completion preset.    
-I have unlinked them to give you maximum flexibility with fair warnings.     
+Unlike core SillyTavern, the tracker call runs on a detached request channel. We still read your chosen connection profile so the tracker uses the same API/model, but we never swap the active chat profile while the request is in flight.
+When the completion preset dropdown stays on **Use connection profile default**, the tracker reuses whatever preset is already attached to that profile. Picking a named preset validates it against the matching preset manager, temporarily applies it for the tracker request, and then restores your original profile afterwards. If the preset is missing or incompatible, we log a warning and fall back to the profile preset.
+- Tracker copies the preset's generation knobs (temperature, top_p, top_k, penalties, stop strings, max tokens, etc.) into the independent request.
+- Tracker requests always disable instruct templates so only the extension's prompt is sent.
 When selecting a "Dedicated Completion Preset", you'll see compatibility indicators:
 - **✅ Compatible**: Preset matches your connection profile's API - recommended for best results
 - **⚠️ May have issues**: Preset may work but could have parameter conflicts - use with caution  
@@ -85,3 +97,4 @@ When selecting a "Dedicated Completion Preset", you'll see compatibility indicat
 
 - **SillyTavern**: https://github.com/SillyTavern/SillyTavern
 - **Original Tracker**: https://github.com/kaldigo/SillyTavern-Tracker
+
