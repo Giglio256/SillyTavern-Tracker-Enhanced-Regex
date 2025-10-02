@@ -18,7 +18,7 @@ import { eventHandlers } from "./src/events.js";
 import { registerGenerationMutexListeners } from './lib/interconnection.js';
 import { TrackerInterface } from "./src/ui/trackerInterface.js";
 import { TrackerPreviewManager } from "./src/ui/trackerPreviewManager.js";
-import { generateTrackerCommand, getTrackerCommand, saveTrackerToMessageCommand, stateTrackerCommand, trackerOverrideCommand } from "./src/commands.js";
+import { generateTrackerCommand, getTrackerCommand, saveTrackerToMessageCommand, stateTrackerCommand, trackerOverrideCommand, toggleTrackerInjectionCommand } from "./src/commands.js";
 import { FIELD_INCLUDE_OPTIONS } from "./src/trackerDataHandler.js";
 
 export const extensionName = "tracker-enhanced";
@@ -31,6 +31,7 @@ jQuery(async () => {
 	await initSettings();
 	await TrackerInterface.initializeTrackerButtons();
 	TrackerPreviewManager.init();
+	TrackerInterface.initializeInjectionIndicator();
 });
 
 registerGenerationMutexListeners();
@@ -134,4 +135,20 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
 	],
 	helpString: 'Get or set the tracker extension enabled/dissabled state.',
 	aliases: ['toggle-tracker-enhanced'],
+}));
+
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+	name: 'toggle_tracker_injection',
+	aliases: ['ttj'],
+	callback: toggleTrackerInjectionCommand,
+	returns: 'true when tracker injection is enabled, false otherwise.',
+	namedArgumentList: [
+		SlashCommandNamedArgument.fromProps({
+			name: 'enabled',
+			description: 'Set to true/false to force a state; omit to toggle.',
+			typeList: [ARGUMENT_TYPE.BOOLEAN],
+			isRequired: false,
+		}),
+	],
+	helpString: 'Toggles tracker prompt injection or forces it on/off.',
 }));

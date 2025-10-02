@@ -94,12 +94,12 @@ export class TrackerPromptMaker {
 		buttonsWrapper.append(removeExampleValueBtn);
 
 		// Button to generate template from current fields
-		const generateTemplateBtn = $('<button class="menu_button interactable generate-template-btn">Generate Message Template</button>')
-			.attr('title', 'Generate HTML template for message display based on current fields')
-			.on("click", () => {
-				this.generateTemplate();
-			});
-		buttonsWrapper.append(generateTemplateBtn);
+		// const generateTemplateBtn = $('<button class="menu_button interactable generate-template-btn">Generate Message Template</button>')
+		// 	.attr('title', 'Generate HTML template for message display based on current fields')
+		// 	.on("click", () => {
+		// 		this.generateTemplate();
+		// 	});
+		// buttonsWrapper.append(generateTemplateBtn);
 
 		this.element.append(buttonsWrapper);
 	}

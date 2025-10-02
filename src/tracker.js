@@ -2,7 +2,7 @@ import { saveChatConditional, chat, chat_metadata, setExtensionPrompt, extension
 
 import { hasPendingFileAttachment } from "../../../../../scripts/chats.js";
 import { getMessageTimeStamp } from "../../../../../scripts/RossAscends-mods.js";
-import { debug, getLastMessageWithTracker, getLastNonSystemMessageIndex, getNextNonSystemMessageIndex, getPreviousNonSystemMessageIndex, isSystemMessage, shouldGenerateTracker, shouldShowPopup, warn } from "../lib/utils.js";
+import { log, debug, getLastMessageWithTracker, getLastNonSystemMessageIndex, getNextNonSystemMessageIndex, getPreviousNonSystemMessageIndex, isSystemMessage, shouldGenerateTracker, shouldShowPopup, warn } from "../lib/utils.js";
 import { extensionSettings } from "../index.js";
 import { generateTracker, getRequestPrompt } from "./generation.js";
 import { generationModes, generationTargets } from "./settings/settings.js";
@@ -78,15 +78,22 @@ export async function injectInlinePrompt(clearTracker = false) {
  */
 export async function injectTracker(tracker = "", position = 0) {
 	let trackerYAML = "";
+	let trackerIncluded = false;
 	if(trackerExists(tracker, extensionSettings.trackerDef) && tracker != "") {
 		trackerYAML = cleanTracker(tracker, extensionSettings.trackerDef, OUTPUT_FORMATS.YAML, false);
 		if(trackerYAML != "") {
 			debug("Injecting tracker:", { tracker: trackerYAML, position });
 			trackerYAML = `<tracker>\n${trackerYAML}\n</tracker>`;
+			trackerIncluded = true;
 		}
 	}
 	position = Math.max(extensionSettings.minimumDepth, position);
 	await setExtensionPrompt("trackerEnhanced", trackerYAML, 1, position, true, EXTENSION_PROMPT_ROLES.SYSTEM);
+	if (trackerIncluded) {
+		log(`[Tracker Enhanced] 💉 Injected tracker prompt at depth ${position} (length ${trackerYAML.length})`);
+	} else if (trackerYAML === "") {
+		log(`[Tracker Enhanced] 🧹 Cleared tracker prompt (depth ${position})`);
+	}
 }
 
 /**
@@ -356,7 +363,11 @@ async function handleStagedGeneration(type, options, dryRun) {
 		}
 	}
 
-	await injectTracker(tracker, position);
+	if (extensionSettings.trackerInjectionEnabled === false) {
+		await injectTracker("", 0);
+	} else {
+		await injectTracker(tracker, position);
+	}
 
 	if (manageStopButton) activateSendButtons();
 }

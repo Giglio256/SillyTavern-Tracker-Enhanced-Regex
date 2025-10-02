@@ -290,14 +290,12 @@
 }
 
 #tracker_enhanced_generate_template {
-  background-color: var(--SmartThemeQuoteColor) !important;
   color: var(--SmartThemeBodyColor) !important;
   border: 1px solid var(--SmartThemeBorderColor);
   transition: all 0.2s ease;
 }
 
 #tracker_enhanced_generate_template:hover {
-  background-color: var(--SmartThemeBodyColor) !important;
   color: var(--SmartThemeQuoteColor) !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -305,7 +303,6 @@
 
 /* Generate Template button styling in Prompt Maker */
 .tracker-prompt-maker .generate-template-btn {
-  background-color: var(--SmartThemeQuoteColor) !important;
   color: var(--SmartThemeBodyColor) !important;
   border: 1px solid var(--SmartThemeBorderColor);
   transition: all 0.2s ease;
@@ -313,7 +310,6 @@
 }
 
 .tracker-prompt-maker .generate-template-btn:hover {
-  background-color: var(--SmartThemeBodyColor) !important;
   color: var(--SmartThemeQuoteColor) !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
