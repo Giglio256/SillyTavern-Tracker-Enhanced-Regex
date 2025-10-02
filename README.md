@@ -15,6 +15,8 @@ An advanced, feature-rich tracker extension for SillyTavern that provides compre
 - Simplified UI:
    - Changed "Generate Template" button to plain style.
    - Removed redundant "Generate Message Template" in prompt maker (same call).
+- Updated the tracker panel grip ID in src/ui/trackerInterface.js:51 so it now resolves to trackerEnhancedInterfaceheader, matching what dragElement() looks for; MovingUI can again hook
+  the header and drag the panel.
 
 
 01-10-2025
