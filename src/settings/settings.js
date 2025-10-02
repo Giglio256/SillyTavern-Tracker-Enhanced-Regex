@@ -8,6 +8,7 @@ import { generationCaptured } from "../../lib/interconnection.js";
 import { TrackerPromptMakerModal } from "../ui/trackerPromptMakerModal.js";
 import { TrackerTemplateGenerator } from "../ui/components/trackerTemplateGenerator.js";
 import { TrackerJavaScriptGenerator } from "../ui/components/trackerJavaScriptGenerator.js";
+import { TrackerInterface } from "../ui/trackerInterface.js";
 import { DevelopmentTestUI } from "../ui/developmentTestUI.js";
 
 export { generationModes, generationTargets, trackerFormat } from "./defaultSettings.js";
@@ -124,6 +125,7 @@ function setSettingsInitialValues() {
 	$("#tracker_enhanced_generation_target").val(extensionSettings.generationTarget);
 	$("#tracker_enhanced_show_popup_for").val(extensionSettings.showPopupFor);
 	$("#tracker_enhanced_format").val(extensionSettings.trackerFormat);
+	$("#tracker_enhanced_toolbar_indicator").prop("checked", extensionSettings.toolbarIndicatorEnabled !== false);
 	$("#tracker_enhanced_debug").prop("checked", extensionSettings.debugMode);
 
 	// Set other settings fields
@@ -175,6 +177,15 @@ function registerSettingsListeners() {
 	$("#tracker_enhanced_generation_target").on("change", onSettingSelectChange("generationTarget"));
 	$("#tracker_enhanced_show_popup_for").on("change", onSettingSelectChange("showPopupFor"));
 	$("#tracker_enhanced_format").on("change", onSettingSelectChange("trackerFormat"));
+	$("#tracker_enhanced_toolbar_indicator").on("input", (event) => {
+		const enabled = $(event.currentTarget).is(":checked");
+		extensionSettings.toolbarIndicatorEnabled = enabled;
+		saveSettingsDebounced();
+		if (typeof TrackerInterface.setIndicatorVisibility === "function") {
+			TrackerInterface.setIndicatorVisibility(enabled);
+		}
+	});
+
 	$("#tracker_enhanced_debug").on("input", onSettingCheckboxInput("debugMode"));
 
 	$("#tracker_enhanced_context_prompt").on("input", onSettingInputareaInput("generateContextTemplate"));

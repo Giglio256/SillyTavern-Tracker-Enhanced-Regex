@@ -1,4 +1,4 @@
-import { animation_duration, chat } from "../../../../../../script.js";
+import { animation_duration, chat, saveSettingsDebounced } from "../../../../../../script.js";
 import { dragElement } from "../../../../../../scripts/RossAscends-mods.js";
 import { loadMovingUIState } from "../../../../../../scripts/power-user.js";
 import { extensionSettings } from "../../index.js";
@@ -6,6 +6,7 @@ import { error, getPreviousNonSystemMessageIndex, getLastNonSystemMessageIndex, 
 import { generateTracker } from "../generation.js";
 import { FIELD_INCLUDE_OPTIONS, getTracker, OUTPUT_FORMATS, saveTracker } from "../trackerDataHandler.js";
 import { TrackerContentRenderer } from './components/trackerContentRenderer.js';
+import { injectTracker } from '../tracker.js';
 
 export class TrackerInterface {
     constructor() {
@@ -53,14 +54,22 @@ export class TrackerInterface {
         const editorHeader = `<div id="trackerInterfaceHeader">Tracker Enhanced</div>`;
         const editorContainer = `<div id="trackerInterfaceContents" class="scrollY"></div>`;
         const editorFooter = `<div id="trackerInterfaceFooter">
-            <button id="trackerInterfaceViewButton" class="menu_button menu_button_default interactable" tabindex="0">View</button>
-            <button id="trackerInterfaceEditButton" class="menu_button menu_button_default interactable" tabindex="0">Edit</button>
-            <button id="trackerInterfaceRegenerateTracker" class="menu_button menu_button_default interactable" tabindex="0">Regenerate</button>
-            <select id="trackerInterfaceRegenOptions" class="tracker-regen-options">
-                <option value="no-static">No Static Fields</option>
-                <option value="all-fields">All Fields</option>
-                <option value="static-only">Static Only</option>
-            </select>
+            <div class="tracker-interface-toggle-row interactable" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label id="trackerInterfaceInjectionToggleLabel" class="tracker-interface-toggle interactable" style="display:flex;align-items:center;gap:4px;">
+                    <input type="checkbox" id="trackerInterfaceInjectionToggle">
+                    <span>Inject tracker</span>
+                </label>
+            </div>
+            <div class="tracker-interface-button-row" style="display:flex;align-items:center;gap:8px;">
+                <button id="trackerInterfaceViewButton" class="menu_button menu_button_default interactable" tabindex="0">View</button>
+                <button id="trackerInterfaceEditButton" class="menu_button menu_button_default interactable" tabindex="0">Edit</button>
+                <button id="trackerInterfaceRegenerateTracker" class="menu_button menu_button_default interactable" tabindex="0">Regenerate</button>
+                <select id="trackerInterfaceRegenOptions" class="tracker-regen-options">
+                    <option value="no-static">No Static Fields</option>
+                    <option value="all-fields">All Fields</option>
+                    <option value="static-only">Static Only</option>
+                </select>
+            </div>
         </div>`;
 
         const newElement = $(template);
@@ -88,6 +97,36 @@ export class TrackerInterface {
         this.editButton = newElement.find('#trackerInterfaceEditButton');
         this.regenerateButton = newElement.find('#trackerInterfaceRegenerateTracker');
         this.regenOptions = newElement.find('#trackerInterfaceRegenOptions');
+        this.injectionToggle = newElement.find('#trackerInterfaceInjectionToggle');
+        this.injectionToggleLabel = newElement.find('#trackerInterfaceInjectionToggleLabel');
+
+        const updateInjectionToggleState = (enabled) => {
+            const hint = enabled
+                ? 'Tracker prompt will be injected into upcoming generations.'
+                : 'Tracker prompt injection is disabled.';
+            this.injectionToggleLabel.attr('title', hint);
+        };
+
+        const injectionEnabled = extensionSettings.trackerInjectionEnabled !== false;
+        this.applyInjectionToggleState = updateInjectionToggleState;
+        this.injectionToggle.prop('checked', injectionEnabled);
+        updateInjectionToggleState(injectionEnabled);
+        TrackerInterface.updateInjectionIndicator(injectionEnabled);
+
+        this.injectionToggle.on('change', async () => {
+            const enabled = this.injectionToggle.is(':checked');
+            extensionSettings.trackerInjectionEnabled = enabled;
+            saveSettingsDebounced();
+            updateInjectionToggleState(enabled);
+            TrackerInterface.updateInjectionIndicator(enabled);
+            if (!enabled) {
+                try {
+                    await injectTracker("", 0);
+                } catch (err) {
+                    error('Failed to clear tracker injection when disabled.', err);
+                }
+            }
+        });
 
         // Event handlers for buttons
         this.viewButton.on('click', () => this.switchMode('view'));
@@ -239,6 +278,98 @@ export class TrackerInterface {
      * Static method to initialize the tracker buttons in the UI.
      * This method adds the tracker buttons to the UI and sets up event handlers.
      */
+    static initializeInjectionIndicator() {
+        if (extensionSettings.toolbarIndicatorEnabled === false) {
+            TrackerInterface.removeInjectionIndicator();
+            return;
+        }
+
+        const container = document.getElementById('leftSendForm');
+        if (!container) {
+            TrackerInterface.removeInjectionIndicator();
+            return;
+        }
+
+        let indicator = document.getElementById('trackerInjectionStatus');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'trackerInjectionStatus';
+            indicator.className = 'tracker-injection-status fa-solid fa-code';
+            indicator.style.marginLeft = '6px';
+            indicator.style.fontSize = '1.05em';
+            indicator.style.cursor = 'default';
+            indicator.setAttribute('role', 'status');
+            indicator.setAttribute('tabindex', '0');
+            indicator.setAttribute('aria-live', 'polite');
+
+            const optionsButton = container.querySelector('#options_button');
+            if (optionsButton && optionsButton.parentNode === container) {
+                optionsButton.insertAdjacentElement('afterend', indicator);
+            } else {
+                container.appendChild(indicator);
+            }
+        }
+
+        TrackerInterface.applyIndicatorState(indicator, extensionSettings.trackerInjectionEnabled !== false);
+    }
+
+    static removeInjectionIndicator() {
+        const indicator = document.getElementById('trackerInjectionStatus');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    static setIndicatorVisibility(enabled) {
+        if (enabled) {
+            TrackerInterface.initializeInjectionIndicator();
+            TrackerInterface.updateInjectionIndicator(extensionSettings.trackerInjectionEnabled !== false);
+        } else {
+            TrackerInterface.removeInjectionIndicator();
+        }
+    }
+
+    static applyIndicatorState(indicator, enabled) {
+        if (!indicator) return;
+        const isEnabled = !!enabled;
+        indicator.dataset.enabled = isEnabled ? 'true' : 'false';
+        indicator.style.color = isEnabled ? 'var(--okColor, #4caf50)' : 'var(--warningColor, #f44336)';
+        indicator.setAttribute('title', isEnabled ? 'Tracker injection enabled' : 'Tracker injection disabled');
+        indicator.classList.toggle('tracker-injection-status-off', !isEnabled);
+    }
+
+    static updateInjectionIndicator(enabled) {
+        if (extensionSettings.toolbarIndicatorEnabled === false) {
+            TrackerInterface.removeInjectionIndicator();
+            return;
+        }
+
+        let indicator = document.getElementById('trackerInjectionStatus');
+        if (!indicator) {
+            TrackerInterface.initializeInjectionIndicator();
+            indicator = document.getElementById('trackerInjectionStatus');
+        }
+        if (!indicator) return;
+        const isEnabled = typeof enabled === 'boolean' ? enabled : (extensionSettings.trackerInjectionEnabled !== false);
+        TrackerInterface.applyIndicatorState(indicator, isEnabled);
+    }
+
+    static syncInjectionToggle(enabled) {
+        const instance = TrackerInterface.instance;
+        if (instance && instance.injectionToggle) {
+            instance.injectionToggle.prop('checked', !!enabled);
+            if (typeof instance.applyInjectionToggleState === 'function') {
+                instance.applyInjectionToggleState(!!enabled);
+            } else if (instance.injectionToggleLabel) {
+                const hint = enabled
+                    ? 'Tracker prompt will be injected into upcoming generations.'
+                    : 'Tracker prompt injection is disabled.';
+                instance.injectionToggleLabel.attr('title', hint);
+            }
+        }
+        TrackerInterface.updateInjectionIndicator(enabled);
+    }
+
     static initializeTrackerButtons() {
         const openTrackerInterface = (requestedMesId = null) => {
             let mesId = Number.isInteger(requestedMesId) && requestedMesId >= 0 ? requestedMesId : getLastMessageWithTracker();
@@ -292,3 +423,5 @@ export class TrackerInterface {
         });
     }
 }
+
+

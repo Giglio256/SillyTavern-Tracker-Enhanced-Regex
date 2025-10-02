@@ -847,6 +847,7 @@ export const defaultSettings = {
 		},
 	},
 	debugMode: false,
+	trackerInjectionEnabled: true,
 };
 
 // Default test data for development
@@ -912,3 +913,4 @@ export const testGroupData = {
 		party_reputation: 'Respected'
 	}
 };
+

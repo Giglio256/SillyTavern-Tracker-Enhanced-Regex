@@ -4,6 +4,19 @@ An advanced, feature-rich tracker extension for SillyTavern that provides compre
 
 ## Changelog
 
+02-10-2025
+- Added AGPL-3.0 LICENSE file (based on SillyTavern’s official license).
+- Added debug log marker 💉 to indicate when prompt injection occurs.
+- As requested, added tracker injection toggle, this only toggles injection, the tracker still runs:
+   - New checkbox in the tracker menu.
+   - New slash command `/toggle_tracker_injection` (alias `/ttj`).
+   - Toolbar indicator (green/red) to show toggle status, can be hidden in settings.
+   - Toggling off injection also clears the “stale” tracker cache in SillyTavern’s `extension_prompts`.
+- Simplified UI:
+   - Changed "Generate Template" button to plain style.
+   - Removed redundant "Generate Message Template" in prompt maker (same call).
+
+
 01-10-2025
 - Clean up connection profile/completion preset usages.
 - Tracker now reuses completion presets end-to-end, copying temperature, top_p/top_k, penalties, stop strings, and max tokens into the independent request.
