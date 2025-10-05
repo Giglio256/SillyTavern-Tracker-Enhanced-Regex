@@ -4,6 +4,14 @@ An advanced, feature-rich tracker extension for SillyTavern that provides compre
 
 ## Changelog
 
+05-10-2025
+- Added a configurable **“Roleplay Injection Prompt”**, allowing injected tracker payloads to begin with a short guidance line.  
+  - This helps the roleplay LLM understand the purpose of the tracker.  
+- Removed **Inline** and **Two-Stage** generation models, along with their pipelines and settings.  
+  - *Inline* simply injected into the main chat and asked the roleplay LLM to handle the tracker task, which was counterintuitive since it bypassed our independent connection.  
+  - *Two-Stage* sent two requests, which I never found useful.  
+  - Both were removed to simplify pipelines and settings.
+
 02-10-2025
 - Added AGPL-3.0 LICENSE file (based on SillyTavern’s official license).
 - Added debug log marker 💉 to indicate when prompt injection occurs.
