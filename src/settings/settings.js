@@ -3,7 +3,7 @@ import { getContext } from '../../../../../../scripts/extensions.js';
 
 import { extensionFolderPath, extensionSettings } from "../../index.js";
 import { error, debug, toTitleCase } from "../../lib/utils.js";
-import { defaultSettings, generationModes, generationTargets } from "./defaultSettings.js";
+import { defaultSettings, generationTargets } from "./defaultSettings.js";
 import { generationCaptured } from "../../lib/interconnection.js";
 import { TrackerPromptMakerModal } from "../ui/trackerPromptMakerModal.js";
 import { TrackerTemplateGenerator } from "../ui/components/trackerTemplateGenerator.js";
@@ -39,7 +39,7 @@ export async function initSettings() {
 	const currentSettings = { ...extensionSettings };
 
 	if (!currentSettings.trackerDef) {
-		const allowedKeys = ["enabled", "generateContextTemplate", "generateSystemPrompt", "generateRequestPrompt", "characterDescriptionTemplate", "mesTrackerTemplate", "numberOfMessages", "responseLength", "debugMode"];
+		const allowedKeys = ["enabled", "generateContextTemplate", "generateSystemPrompt", "generateRequestPrompt", "roleplayPrompt", "characterDescriptionTemplate", "mesTrackerTemplate", "numberOfMessages", "responseLength", "debugMode"];
 
 		const newSettings = {
 			...defaultSettings,
@@ -98,7 +98,6 @@ async function loadSettingsUI() {
 
 		setSettingsInitialValues();
 		registerSettingsListeners();
-		updateFieldVisibility(extensionSettings.generationMode);
 		
 		// Initialize Development Test UI
 		DevelopmentTestUI.init();
@@ -118,10 +117,8 @@ function setSettingsInitialValues() {
 	updatePresetDropdown();
 	initializeOverridesDropdowns();
 	updatePopupDropdown();
-	updateFieldVisibility(extensionSettings.generationMode);
 
 	$("#tracker_enhanced_enable").prop("checked", extensionSettings.enabled);
-	$("#tracker_enhanced_generation_mode").val(extensionSettings.generationMode);
 	$("#tracker_enhanced_generation_target").val(extensionSettings.generationTarget);
 	$("#tracker_enhanced_show_popup_for").val(extensionSettings.showPopupFor);
 	$("#tracker_enhanced_format").val(extensionSettings.trackerFormat);
@@ -132,12 +129,8 @@ function setSettingsInitialValues() {
 	$("#tracker_enhanced_context_prompt").val(extensionSettings.generateContextTemplate);
 	$("#tracker_enhanced_system_prompt").val(extensionSettings.generateSystemPrompt);
 	$("#tracker_enhanced_request_prompt").val(extensionSettings.generateRequestPrompt);
+	$("#tracker_enhanced_roleplay_prompt").val(extensionSettings.roleplayPrompt);
 	$("#tracker_enhanced_recent_messages").val(extensionSettings.generateRecentMessagesTemplate);
-	$("#tracker_enhanced_inline_request_prompt").val(extensionSettings.inlineRequestPrompt);
-	$("#tracker_enhanced_message_summarization_context_template").val(extensionSettings.messageSummarizationContextTemplate);
-	$("#tracker_enhanced_message_summarization_system_prompt").val(extensionSettings.messageSummarizationSystemPrompt);
-	$("#tracker_enhanced_message_summarization_request_prompt").val(extensionSettings.messageSummarizationRequestPrompt);
-	$("#tracker_enhanced_message_summarization_recent_messages").val(extensionSettings.messageSummarizationRecentMessagesTemplate);
 	$("#tracker_enhanced_character_description").val(extensionSettings.characterDescriptionTemplate);
 	$("#tracker_enhanced_mes_tracker_template").val(extensionSettings.mesTrackerTemplate);
 	$("#tracker_enhanced_mes_tracker_javascript").val(extensionSettings.mesTrackerJavascript);
@@ -173,7 +166,6 @@ function registerSettingsListeners() {
 
 	// Settings fields
 	$("#tracker_enhanced_enable").on("input", onSettingCheckboxInput("enabled"));
-	$("#tracker_enhanced_generation_mode").on("change", onGenerationModeChange);
 	$("#tracker_enhanced_generation_target").on("change", onSettingSelectChange("generationTarget"));
 	$("#tracker_enhanced_show_popup_for").on("change", onSettingSelectChange("showPopupFor"));
 	$("#tracker_enhanced_format").on("change", onSettingSelectChange("trackerFormat"));
@@ -191,12 +183,8 @@ function registerSettingsListeners() {
 	$("#tracker_enhanced_context_prompt").on("input", onSettingInputareaInput("generateContextTemplate"));
 	$("#tracker_enhanced_system_prompt").on("input", onSettingInputareaInput("generateSystemPrompt"));
 	$("#tracker_enhanced_request_prompt").on("input", onSettingInputareaInput("generateRequestPrompt"));
+	$("#tracker_enhanced_roleplay_prompt").on("input", onSettingInputareaInput("roleplayPrompt"));
 	$("#tracker_enhanced_recent_messages").on("input", onSettingInputareaInput("generateRecentMessagesTemplate"));
-	$("#tracker_enhanced_inline_request_prompt").on("input", onSettingInputareaInput("inlineRequestPrompt"));
-	$("#tracker_enhanced_message_summarization_context_template").on("input", onSettingInputareaInput("messageSummarizationContextTemplate"));
-	$("#tracker_enhanced_message_summarization_system_prompt").on("input", onSettingInputareaInput("messageSummarizationSystemPrompt"));
-	$("#tracker_enhanced_message_summarization_request_prompt").on("input", onSettingInputareaInput("messageSummarizationRequestPrompt"));
-	$("#tracker_enhanced_message_summarization_recent_messages").on("input", onSettingInputareaInput("messageSummarizationRecentMessagesTemplate"));
 	$("#tracker_enhanced_character_description").on("input", onSettingInputareaInput("characterDescriptionTemplate"));
 	$("#tracker_enhanced_mes_tracker_template").on("input", onSettingInputareaInput("mesTrackerTemplate"));
 	$("#tracker_enhanced_mes_tracker_javascript").on("input", onSettingInputareaInput("mesTrackerJavascript"));
@@ -653,13 +641,9 @@ function getCurrentPresetSettings() {
 		generateSystemPrompt: extensionSettings.generateSystemPrompt,
 		generateRequestPrompt: extensionSettings.generateRequestPrompt,
 		generateRecentMessagesTemplate: extensionSettings.generateRecentMessagesTemplate,
+		roleplayPrompt: extensionSettings.roleplayPrompt,
 		
-		messageSummarizationContextTemplate: extensionSettings.messageSummarizationContextTemplate,
-		messageSummarizationSystemPrompt: extensionSettings.messageSummarizationSystemPrompt,
-		messageSummarizationRequestPrompt: extensionSettings.messageSummarizationRequestPrompt,
-		messageSummarizationRecentMessagesTemplate: extensionSettings.messageSummarizationRecentMessagesTemplate,
 
-		inlineRequestPrompt: extensionSettings.inlineRequestPrompt,
 		
 		characterDescriptionTemplate: extensionSettings.characterDescriptionTemplate,
 
@@ -702,18 +686,7 @@ function onSettingSelectChange(settingName) {
 	};
 }
 
-/**
- * Event handler for changing the generation mode.
- * Updates the field visibility based on the selected mode.
- */
-function onGenerationModeChange() {
-	const value = $(this).val();
-	extensionSettings.generationMode = value;
-	updateFieldVisibility(value);
-	saveSettingsDebounced();
-}
-
-/**
+/**
  * Returns a function to handle textarea input changes for a given setting.
  * @param {string} settingName The name of the setting.
  * @returns {Function} The event handler function.
@@ -962,7 +935,6 @@ function onTrackerPromptResetClick() {
             
             // Update UI components
             updatePresetDropdown();
-            updateFieldVisibility(extensionSettings.generationMode);
             setSettingsInitialValues();
             processTrackerJavascript();
             
@@ -990,23 +962,6 @@ function onTrackerPromptResetClick() {
  * Updates the visibility of fields based on the selected generation mode.
  * @param {string} mode The current generation mode.
  */
-function updateFieldVisibility(mode) {
-	// Hide all sections first
-	$("#generate_context_section").hide();
-	$("#message_summarization_section").hide();
-	$("#inline_request_section").hide();
-
-	// Show fields based on the selected mode
-	if (mode === generationModes.INLINE) {
-		$("#inline_request_section").show();
-	} else if (mode === generationModes.SINGLE_STAGE) {
-		$("#generate_context_section").show();
-	} else if (mode === generationModes.TWO_STAGE) {
-		$("#generate_context_section").show();
-		$("#message_summarization_section").show();
-	}
-}
-
 // #endregion
 
 // #region Popup Options Management

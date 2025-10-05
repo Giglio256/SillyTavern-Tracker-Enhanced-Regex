@@ -90,7 +90,6 @@
 						<button id="tracker_enhanced_preset_export" class="menu_button fa-solid fa-file-export interactable" title="Export current tracker enhanced preset"></button>
 					</div>
 				</div>
-			</div>
 			<hr class="sysHR" />
 
 			<details>
@@ -98,26 +97,12 @@
 				<!-- Preset Related Fields -->
 				<div id="preset_related_fields">
 					<!-- Generation Mode -->
-					<div class="tracker-block m-b-1 m-t-1">
-						<label for="tracker_enhanced_generation_mode">Generation Mode</label><br />
-						<small
-							>Select how the tracker updates:<br />
-							- Inline: Adds the tracker to the beginning of every message.<br />
-							- Single-Stage: Sends one prompt to update the tracker.<br />
-							- Two-Stage: First summarizes changes, then updates the tracker.</small
-						><br />
-						<select id="tracker_enhanced_generation_mode" class="text_pole">
-							<option value="inline">Inline</option>
-							<option value="single-stage">Single-Stage</option>
-							<option value="two-stage">Two-Stage</option>
-						</select>
-					</div>
 					<!-- Tracker Templates -->
 					<div id="generate_context_section" class="tracker-block m-b-1 m-t-1">
 						<label for="tracker_enhanced_context_prompt">Context Template</label><br />
 						<small
 							>Define the template for generating the tracker. Use macros like:<br />
-							{{trackerSystemPrompt}}, {{characterDescriptions}}, {{trackerExamples}}, {{recentMessages}}, {{currentTracker}}, {{trackerFormat}}, {{trackerFieldPrompt}}, {{firstStageMessage}} (Only in two stage mode).</small
+							{{trackerSystemPrompt}}, {{characterDescriptions}}, {{trackerExamples}}, {{recentMessages}}, {{currentTracker}}, {{trackerFormat}}, {{trackerFieldPrompt}}.</small
 						><br />
 						<textarea id="tracker_enhanced_context_prompt" class="text_pole" rows="5"></textarea>
 					</div>
@@ -133,9 +118,16 @@
 						<label for="tracker_enhanced_request_prompt">Request Prompt</label><br />
 						<small
 							>Set the request prompt for generating the tracker. Available macros include:<br />
-							{{trackerFieldPrompt}}, {{trackerFormat}}, {{message}} (last message), {{firstStageMessage}} (Two-Stage mode only).</small
+							{{trackerFieldPrompt}}, {{trackerFormat}}, {{message}} (last message).</small
 						><br />
 						<textarea id="tracker_enhanced_request_prompt" class="text_pole" rows="5"></textarea>
+					</div>
+					<div class="tracker-block m-b-1 m-t-1">
+						<label for="tracker_enhanced_roleplay_prompt">Roleplay Injection Prompt</label><br />
+						<small
+							>Additional guidance inserted ahead of the tracker block when we inject into SillyTavern prompts. Keep it concise and focused on diegetic knowledge boundaries.</small
+						><br />
+						<textarea id="tracker_enhanced_roleplay_prompt" class="text_pole" rows="3"></textarea>
 					</div>
 					<div class="tracker-block m-b-1 m-t-1">
 						<label for="tracker_enhanced_recent_messages">Recent Messages Template</label><br />
@@ -145,47 +137,6 @@
 						><br />
 						<textarea id="tracker_enhanced_recent_messages" class="text_pole" rows="5"></textarea>
 					</div>
-					<div id="inline_request_section" class="tracker-block m-b-1 m-t-1">
-						<label for="tracker_enhanced_inline_request_prompt">Inline Request Prompt</label><br />
-						<small
-							>Configure the prompt injected at the start of every message in Inline mode. Use macros like:<br />
-							{{trackerFieldPrompt}}, {{trackerFormat}}, {{message}}.</small
-						><br />
-						<textarea id="tracker_enhanced_inline_request_prompt" class="text_pole" rows="5"></textarea>
-					</div>
-					<div id="message_summarization_section">
-						<div class="tracker-block m-b-1 m-t-1">
-							<label for="tracker_enhanced_message_summarization_context_template">Message Summarization Context Template</label><br />
-							<small
-								>Template used for summarizing the last message. Macros available:<br />
-								{{trackerSystemPrompt}}, {{characterDescriptions}}, {{trackerExamples}}, {{recentMessages}}, {{currentTracker}}, {{trackerFormat}}, {{trackerFieldPrompt}}, {{messageSummarizationSystemPrompt}}.</small
-							><br />
-							<textarea id="tracker_enhanced_message_summarization_context_template" class="text_pole" rows="5"></textarea>
-						</div>
-						<div class="tracker-block m-b-1 m-t-1">
-							<label for="tracker_enhanced_message_summarization_system_prompt">Message Summarization System Prompt</label><br />
-							<small
-								>System-level prompt for summarizing the last message. Available macros:<br />
-								{{charNames}}, {{defaultTracker}}, {{trackerFormat}}.</small
-							><br />
-							<textarea id="tracker_enhanced_message_summarization_system_prompt" class="text_pole" rows="5"></textarea>
-						</div>
-						<div class="tracker-block m-b-1 m-t-1">
-							<label for="tracker_enhanced_message_summarization_request_prompt">Message Summarization Request Prompt</label><br />
-							<small
-								>Set the request prompt for summarizing the last message. Macros:<br />
-								{{trackerFieldPrompt}}, {{trackerFormat}}, {{message}}.</small
-							><br />
-							<textarea id="tracker_enhanced_message_summarization_request_prompt" class="text_pole" rows="5"></textarea>
-						</div>
-						<div class="tracker-block m-b-1 m-t-1">
-							<label for="tracker_enhanced_recent_messages">Message Summarization Recent Messages Template</label><br />
-							<small
-								>Template for recent messages in the tracker. Macros include:<br />
-								{{char}}, {{message}}, {{tracker}}, {{#if tracker}}...{{/if}}.</small
-							><br />
-							<textarea id="tracker_enhanced_message_summarization_recent_messages" class="text_pole" rows="5"></textarea>
-						</div>
 					</div>
 					<div class="tracker-block m-b-1 m-t-1">
 						<label for="tracker_enhanced_character_description">Character Description Template</label><br />
@@ -231,7 +182,7 @@
 			<!-- Other Settings -->
 			<div class="tracker-block m-b-1 m-t-1">
 				<label for="tracker_enhanced_number_of_messages">Number of Recent Messages to Include</label><br />
-				<small>Set how many recent messages are included in tracker generation prompts. In Inline mode, this defines how many messages have trackers added.</small><br />
+				<small>Set how many recent messages are included in tracker generation prompts.</small><br />
 				<input max="99" min="1" class="text_pole" id="tracker_enhanced_number_of_messages" type="number" />
 			</div>
 			<div class="tracker-block m-b-1 m-t-1">

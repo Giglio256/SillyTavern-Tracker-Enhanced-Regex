@@ -1,9 +1,7 @@
 //#region Setting Enums
 
 export const generationModes = {
-	INLINE: "inline",
 	SINGLE_STAGE: "single-stage",
-	TWO_STAGE: "two-stage",
 };
 
 export const generationTargets = {
@@ -24,177 +22,6 @@ export const PREVIEW_PLACEMENT = {
 	APPEND: "append",
 	PREPEND: "prepend",
 };
-
-//#endregion
-
-//#region Two Stage
-
-const twoStageGenerateContextTemplate = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-{{trackerSystemPrompt}}
-
-<!-- Start of Context -->
-
-{{characterDescriptions}}
-
-### Example Trackers
-<!-- Start of Example Trackers -->
-{{trackerExamples}}
-<!-- End of Example Trackers -->
-
-### Current Tracker
-<tracker>
-{{currentTracker}}
-</tracker>
-
-### Changes List
-{{firstStageMessage}}
-
-<!-- End of Context --><|eot_id|>`;
-const twoStageGenerateSystemPrompt = `You are a Scene Tracker Assistant, tasked with providing clear, consistent, and structured updates to a scene tracker for a roleplay. Use the provided changes list, previous tracker details, and recent context to accurately update the tracker. Your response must follow the specified {{trackerFormat}} structure exactly, ensuring that each field is filled and complete.
-
-### Key Instructions:
-1. **Tracker Format**: Always respond with a complete tracker in {{trackerFormat}} format. Every field must be present in the response, even if unchanged. Do not omit fields or change the {{trackerFormat}} structure.
-2. **Incorporate Changes List**:
-   - Use the provided changes list to guide updates. Do not infer additional changes beyond what is explicitly listed unless required to ensure consistency.
-   - If specific information is missing, rely on prior descriptions, logical inferences, or default details.
-3. **Default Assumptions for Missing Information**: 
-   - **Character Details**: If no new details are provided for a character, assume reasonable defaults based on previous entries or context.
-   - **Outfit**: Include complete outfit details for each character, specifying underwear explicitly. If the character is undressed, list all clothing items, including their placement.
-   - **StateOfDress**: Describe how put-together or disheveled the character appears, reflecting any updates in the changes list.
-4. **Incremental Time Progression**: 
-   - Adjust time incrementally based on the changes list, typically only a few seconds per update unless otherwise specified.
-   - Format the time as "HH:MM:SS; MM/DD/YYYY (Day Name)".
-5. **Context-Appropriate Times**: 
-   - Ensure the time aligns with the scene's setting and context (e.g., operating hours for public venues).
-6. **Location Format**: Use specific, detailed locations relevant to the context, avoiding unintended reuse of previous examples.
-7. **Consistency**: Maintain {{trackerFormat}} structure precisely. If no changes occur in a field, retain the most recent value.
-8. **Topics Format**: Ensure topics are concise and relevant to the scene (e.g., one- or two-word keywords).
-9. **Avoid Redundancies**: Only include details provided or logically inferred. Avoid speculative or unnecessary additions.
-
-### Tracker Template
-Return your response in the following {{trackerFormat}} structure, following this format precisely:
-
-\`\`\`
-<tracker>
-{{defaultTracker}}
-</tracker>
-\`\`\`
-
-### Important Reminders:
-1. **Changes List**: Use the provided changes list to guide updates to the tracker. Do not detect additional changes beyond what is explicitly stated.
-2. **Recent Messages and Current Tracker**: Consider the recent messages and the current tracker to ensure accuracy and context alignment.
-3. **Structured Response**: Respond with the full tracker in {{trackerFormat}}. Do not add extra information outside of the tracker structure.
-4. **Complete Entries**: Always provide the full tracker, even if the changes are minor or limited to a single field.
-
-Your primary objective is to ensure clarity, consistency, and structured updates for scene tracking in {{trackerFormat}} format, accurately reflecting the provided changes.`;
-const twoStageGenerateRequestPrompt = `[Use the provided changes list below to update the current scene tracker based on explicit details. Do not infer additional changes beyond those listed. Pause and ensure only the tracked data is provided, formatted in {{trackerFormat}}. Avoid adding, omitting, or rearranging fields unless specified. Respond with the full tracker every time.
-
-### Changes List:
-{{firstStageMessage}}
-
-### Response Rules:
-{{trackerFieldPrompt}}
-
-Ensure the response remains consistent, strictly follows this structure in {{trackerFormat}}, and omits any extra data or deviations. You MUST enclose the tracker in <tracker></tracker> tags.]`;
-
-const messageSummarizationContextTemplate = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-{{messageSummarizationSystemPrompt}}
-
-<!-- Start of Context -->
-
-### Current Tracker
-<tracker>
-{{currentTracker}}
-</tracker>
-
-### Recent Messages
-{{recentMessages}}
-
-### Tracker Field Guidelines
-{{trackerFieldPrompt}}
-
-<!-- End of Context -->
-<|eot_id|>`;
-const messageSummarizationSystemPrompt = `You are a Scene Change Detector. Your task is to analyze the latest message and identify all relevant changes or updates for a scene tracker.
-
-### Instructions:
-1. **Detect Changes**:
-   - Compare the latest message to the recent context and identify explicit or logical updates based on the described actions, emotions, and scene details.
-   - Focus on changes that affect the scene tracker, prioritizing the types of updates outlined in the **Tracker Field Guidelines** provided in the context.
-
-2. **Output Format**:
-   - Provide a **markdown list** describing each identified change.
-   - Each entry must be concise, specific, and written in plain language.
-   - Avoid speculative updates or unrelated information. If no changes are detected, respond with:
-   \`\`\`
-   - No changes identified.
-   \`\`\`
-
-3. **General Handling**:
-   - Use the latest message and recent context to determine updates. Focus on elements such as:
-     - {{trackerFieldPrompt}} (Defined dynamically in the context).
-   - Include specific updates to characters, actions, time, emotional tone, location, or any other field defined in the tracker format.
-
-4. **Example Output**:
-   \`\`\`
-   - The time has advanced by a few seconds.
-   - Cohee is leading Kaldigo through the mall, pointing out stores and holding his hand.
-   - Cohee's tone is excited, reflecting her playful dialogue and energetic gestures.
-   \`\`\`
-
-Your goal is to provide a concise and accurate list of changes that will inform updates to the scene tracker.`;
-const messageSummarizationRequestPrompt = `Analyze the most recent message provided below and compare it to the recent context and tracker to identify changes. Your response must follow the rules provided and use the specified **markdown list** format.
-
-### Recent Message:
-{{message}}
-
-### Response Rules:
-1. Compare the recent message to the current tracker and context to detect changes.
-2. Focus on changes related to the fields outlined in {{trackerFieldPrompt}}, such as time, location, characters, or other context-specific updates.
-3. List all detected changes in markdown list format. Avoid any additional formatting.
-4. Use concise and specific language. Base updates only on explicit or inferred details.
-
-### Output Format:
-\`\`\`
-- The time has advanced by a few seconds.
-- Cohee is leading Kaldigo through the mall, pointing out stores and holding his hand.
-- Cohee’s tone is excited, reflecting her playful dialogue and energetic gestures.
-\`\`\`
-
-Provide only the list of changes as your response.`;
-const messageSummarizationRecentMessagesTemplate = `{{char}}: {{message}}`;
-
-//#endregion
-
-//#region Inline
-
-const inlineRequestPrompt = `[At the beginning of every response, prepend an updated tracker to reflect the current scene. Use the provided tracker format, field guidelines, and default structure to ensure consistency and accuracy.
-
-### Instructions:
-1. **Tracker Updates**:
-   - Update the tracker fields based on the latest message and logical inferences using:
-     - The provided tracker field guidelines.
-     - The current tracker as the base for continuity.
-     - Logical assumptions if explicit details are missing, informed by prior context.
-2. **Time Progression**:
-   - Progress time incrementally unless a time skip is explicitly indicated (e.g., sleeping, traveling, or user requests).
-3. **Weather Updates**:
-   - Update or infer weather conditions based on the setting, time, and scene location.
-4. **Tracker Format**:
-   - Use the exact tracker structure provided in the default tracker template.
-   - Ensure all fields are present and complete, even if unchanged.
-
-### Tracker Format:
-<tracker>
-{{defaultTracker}}
-</tracker>
-
-### Tracker Guidelines:
-{{trackerFieldPrompt}}
-
-Ensure every response starts with a tracker in the specified format, followed by the regular message content.]`;
 
 //#endregion
 
@@ -743,111 +570,59 @@ const minimumDepth = 0;
 
 const responseLength = 0;
 
+const roleplayPrompt = "The tracker block records factual story data for reference only. Tracker is not a character. Base your character's knowledge only on what they could logically know from these facts.";
+
 //#endregion
 
-export const defaultSettings = {
-	enabled: true,
-	selectedProfile: "current",
-	selectedCompletionPreset: "current",
-	generationTarget: generationTargets.BOTH,
-	showPopupFor: generationTargets.NONE,
-	trackerFormat: trackerFormat.YAML,
-
-	generationMode: generationModes.SINGLE_STAGE,
-
-	generateContextTemplate: generateContextTemplate,
-	generateSystemPrompt: generateSystemPrompt,
-	generateRequestPrompt: generateRequestPrompt,
-	generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-
-	messageSummarizationContextTemplate: "",
-	messageSummarizationSystemPrompt: "",
-	messageSummarizationRequestPrompt: "",
-	messageSummarizationRecentMessagesTemplate: "",
-
-	inlineRequestPrompt: "",
-
-	characterDescriptionTemplate: characterDescriptionTemplate,
-
-	mesTrackerTemplate: mesTrackerTemplate,
-	mesTrackerJavascript: mesTrackerJavascript,
-	trackerDef: trackerDef,
-
-	trackerPreviewSelector: trackerPreviewSelector,
-	trackerPreviewPlacement: trackerPreviewPlacement,
-
-	numberOfMessages: numberOfMessages,
-	generateFromMessage: generateFromMessage,
-	minimumDepth: minimumDepth,
-	responseLength: responseLength,
-	selectedPreset: "Default-SingleStage",
-	presets: {
-		"Default-SingleStage": {
-			generationMode: generationModes.SINGLE_STAGE,
-
-			generateContextTemplate: generateContextTemplate,
-			generateSystemPrompt: generateSystemPrompt,
-			generateRequestPrompt: generateRequestPrompt,
-			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-
-			messageSummarizationContextTemplate: "",
-			messageSummarizationSystemPrompt: "",
-			messageSummarizationRequestPrompt: "",
-			messageSummarizationRecentMessagesTemplate: "",
-
-			inlineRequestPrompt: "",
-
-			characterDescriptionTemplate: characterDescriptionTemplate,
-
-			mesTrackerTemplate: mesTrackerTemplate,
-			mesTrackerJavascript: mesTrackerJavascript,
-			trackerDef: trackerDef,
-		},
-		"Default-TwoStage": {
-			generationMode: generationModes.TWO_STAGE,
-
-			generateContextTemplate: twoStageGenerateContextTemplate,
-			generateSystemPrompt: twoStageGenerateSystemPrompt,
-			generateRequestPrompt: twoStageGenerateRequestPrompt,
-			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-
-			messageSummarizationContextTemplate: messageSummarizationContextTemplate,
-			messageSummarizationSystemPrompt: messageSummarizationSystemPrompt,
-			messageSummarizationRequestPrompt: messageSummarizationRequestPrompt,
-			messageSummarizationRecentMessagesTemplate: messageSummarizationRecentMessagesTemplate,
-
-			inlineRequestPrompt: "",
-
-			characterDescriptionTemplate: characterDescriptionTemplate,
-
-			mesTrackerTemplate: mesTrackerTemplate,
-			mesTrackerJavascript: mesTrackerJavascript,
-			trackerDef: trackerDef,
-		},
-		"Default-Inline": {
-			generationMode: generationModes.INLINE,
-
-			generateContextTemplate: generateContextTemplate,
-			generateSystemPrompt: generateSystemPrompt,
-			generateRequestPrompt: generateRequestPrompt,
-			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-
-			messageSummarizationContextTemplate: "",
-			messageSummarizationSystemPrompt: "",
-			messageSummarizationRequestPrompt: "",
-			messageSummarizationRecentMessagesTemplate: "",
-
-			inlineRequestPrompt: inlineRequestPrompt,
-
-			characterDescriptionTemplate: characterDescriptionTemplate,
-
-			mesTrackerTemplate: mesTrackerTemplate,
-			mesTrackerJavascript: mesTrackerJavascript,
-			trackerDef: trackerDef,
-		},
-	},
-	debugMode: false,
-	trackerInjectionEnabled: true,
+export const defaultSettings = {
+	enabled: true,
+	selectedProfile: "current",
+	selectedCompletionPreset: "current",
+	generationTarget: generationTargets.BOTH,
+	showPopupFor: generationTargets.NONE,
+	trackerFormat: trackerFormat.YAML,
+
+	generationMode: generationModes.SINGLE_STAGE,
+
+	generateContextTemplate: generateContextTemplate,
+	generateSystemPrompt: generateSystemPrompt,
+	generateRequestPrompt: generateRequestPrompt,
+	generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+
+	characterDescriptionTemplate: characterDescriptionTemplate,
+
+	mesTrackerTemplate: mesTrackerTemplate,
+	mesTrackerJavascript: mesTrackerJavascript,
+	trackerDef: trackerDef,
+
+	trackerPreviewSelector: trackerPreviewSelector,
+	trackerPreviewPlacement: trackerPreviewPlacement,
+
+	numberOfMessages: numberOfMessages,
+	generateFromMessage: generateFromMessage,
+	minimumDepth: minimumDepth,
+	responseLength: responseLength,
+	roleplayPrompt: roleplayPrompt,
+	selectedPreset: "Default-SingleStage",
+	presets: {
+		"Default-SingleStage": {
+			generationMode: generationModes.SINGLE_STAGE,
+
+			generateContextTemplate: generateContextTemplate,
+			generateSystemPrompt: generateSystemPrompt,
+			generateRequestPrompt: generateRequestPrompt,
+			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+			roleplayPrompt: roleplayPrompt,
+
+			characterDescriptionTemplate: characterDescriptionTemplate,
+
+			mesTrackerTemplate: mesTrackerTemplate,
+			mesTrackerJavascript: mesTrackerJavascript,
+			trackerDef: trackerDef,
+		},
+	},
+	debugMode: false,
+	trackerInjectionEnabled: true,
 };
 
 // Default test data for development

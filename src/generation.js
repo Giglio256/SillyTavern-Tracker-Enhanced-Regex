@@ -5,7 +5,6 @@ import { groups, selected_group } from "../../../../../scripts/group-chats.js";
 import { log, warn, debug, error, unescapeJsonString, getLastMessageWithTracker } from "../lib/utils.js";
 import { yamlToJSON } from "../lib/ymlParser.js";
 import { extensionSettings } from "../index.js";
-import { generationModes } from "./settings/settings.js";
 import { FIELD_INCLUDE_OPTIONS, getDefaultTracker, getExampleTrackers as getExampleTrackersFromDef, getTracker, getTrackerPrompt, OUTPUT_FORMATS, updateTracker } from "./trackerDataHandler.js";
 import { trackerFormat } from "./settings/defaultSettings.js";
 
@@ -389,15 +388,7 @@ export async function generateTracker(mesNum, includedFields = FIELD_INCLUDE_OPT
 	debug(`[Tracker Enhanced] Selected profile: ${extensionSettings.selectedProfile}, Selected preset: ${extensionSettings.selectedCompletionPreset}`);
 
 	try {
-		let tracker;
-
-		if (extensionSettings.generationMode == generationModes.TWO_STAGE) {
-			log(`[Tracker Enhanced] Using TWO-STAGE generation mode with independent connection`);
-			tracker = await generateTwoStageTracker(mesNum, includedFields);
-		} else {
-			log(`[Tracker Enhanced] Using SINGLE-STAGE generation mode with independent connection`);
-			tracker = await generateSingleStageTracker(mesNum, includedFields);
-		}
+		const tracker = await generateSingleStageTracker(mesNum, includedFields);
 
 		if (!tracker) return null;
 
@@ -415,16 +406,10 @@ export async function generateTracker(mesNum, includedFields = FIELD_INCLUDE_OPT
 	}
 }
 
-/**
- * Handles the single-stage generation mode.
- * @param {number} mesNum
- * @param {string} includedFields
- * @param {string|null} requestPrompt - If provided, use this request prompt directly.
- */
-async function generateSingleStageTracker(mesNum, includedFields, firstStageMessage = null) {
+async function generateSingleStageTracker(mesNum, includedFields) {
 	// Build system and request prompts
-	const systemPrompt = getGenerateSystemPrompt(mesNum, includedFields, firstStageMessage);
-	const requestPrompt = getRequestPrompt(extensionSettings.generateRequestPrompt, mesNum, includedFields, firstStageMessage);
+	const systemPrompt = getGenerateSystemPrompt(mesNum, includedFields);
+	const requestPrompt = getRequestPrompt(extensionSettings.generateRequestPrompt, mesNum, includedFields);
 
 	let responseLength = extensionSettings.responseLength > 0 ? extensionSettings.responseLength : null;
 
@@ -433,32 +418,6 @@ async function generateSingleStageTracker(mesNum, includedFields, firstStageMess
 	log(`[Tracker Enhanced] 🎯 SINGLE-STAGE: About to call sendGenerateTrackerRequest`);
 	const tracker = await sendGenerateTrackerRequest(systemPrompt, requestPrompt, responseLength);
 	log(`[Tracker Enhanced] 🎯 SINGLE-STAGE: sendGenerateTrackerRequest returned:`, tracker);
-
-	return tracker;
-}
-
-/**
- * Handles the two-stage generation mode.
- * First: summarize changes (message summarization).
- * Second: generate tracker using the summary (firstStageMessage).
- * @param {number} mesNum
- * @param {string} includedFields
- */
-async function generateTwoStageTracker(mesNum, includedFields) {
-	// Build system and request prompts for message summarization
-	const systemPrompt = getMessageSummarizationSystemPrompt(mesNum, includedFields);
-	const requestPrompt = getRequestPrompt(extensionSettings.messageSummarizationRequestPrompt, mesNum, includedFields);
-
-	let responseLength = extensionSettings.responseLength > 0 ? extensionSettings.responseLength : null;
-
-	// Run the summarization stage to get the firstStageMessage
-	log(`[Tracker Enhanced] 📝 Stage 1/2: Message summarization using independent connection`);
-	const message = await sendIndependentGenerationRequest(systemPrompt + '\n\n' + requestPrompt, responseLength);
-	debug("Message Summarized:", { message });
-
-	// Generate tracker using the AI model in single-stage manner but with the first stage message
-	log(`[Tracker Enhanced] 🎯 Stage 2/2: Tracker generation using independent connection`);
-	const tracker = await generateSingleStageTracker(mesNum, includedFields, message);
 
 	return tracker;
 }
@@ -524,13 +483,12 @@ async function sendGenerateTrackerRequest(systemPrompt, requestPrompt, responseL
 // #region Tracker Prompt Functions
 
 /**
- * Constructs the generate tracker system prompt for the AI model based on the current mode. {{trackerSystemPrompt}}, {{characterDescriptions}}, {{trackerExamples}}, {{recentMessages}}, {{currentTracker}}, {{trackerFormat}}, {{trackerFieldPrompt}}, {{firstStageMessage}}
  * Uses `extensionSettings.generateContextTemplate` and `extensionSettings.generateSystemPrompt`.
  * @param {number} mesNum
  * @param {string} includedFields
  * @returns {string} The system prompt.
  */
-function getGenerateSystemPrompt(mesNum, includedFields = FIELD_INCLUDE_OPTIONS.DYNAMIC, firstStageMessage = null) {
+function getGenerateSystemPrompt(mesNum, includedFields = FIELD_INCLUDE_OPTIONS.DYNAMIC) {
 	const trackerSystemPrompt = getSystemPrompt(extensionSettings.generateSystemPrompt, includedFields);
 	const characterDescriptions = getCharacterDescriptions();
 	const trackerExamples = getExampleTrackers(includedFields);
@@ -547,51 +505,12 @@ function getGenerateSystemPrompt(mesNum, includedFields = FIELD_INCLUDE_OPTIONS.
 		currentTracker,
 		trackerFormat,
 		trackerFieldPrompt,
-		firstStageMessage: firstStageMessage || "", // Only in two-stage mode
 	};
 
-	debug("Generated Tacker Generation System Prompt:", vars);
+	debug("Generated Tracker Generation System Prompt:", vars);
 	return formatTemplate(extensionSettings.generateContextTemplate, vars);
 }
 
-/**
- * Constructs the message summarization system prompt for the AI model in two-stage mode. {{trackerSystemPrompt}}, {{characterDescriptions}}, {{trackerExamples}}, {{recentMessages}}, {{currentTracker}}, {{trackerFormat}}, {{trackerFieldPrompt}}, {{messageSummarizationSystemPrompt}}
- * Uses `extensionSettings.messageSummarizationContextTemplate` and `extensionSettings.messageSummarizationSystemPrompt`.
- * @param {number} mesNum
- * @param {string} includedFields
- * @returns {string} The system prompt.
- */
-function getMessageSummarizationSystemPrompt(mesNum, includedFields) {
-	const trackerSystemPrompt = getSystemPrompt(extensionSettings.messageSummarizationSystemPrompt, includedFields);
-	const messageSummarizationSystemPrompt = getSystemPrompt(extensionSettings.messageSummarizationSystemPrompt, includedFields);
-	const characterDescriptions = getCharacterDescriptions();
-	const trackerExamples = getExampleTrackers(includedFields);
-	const recentMessages = extensionSettings.messageSummarizationRecentMessagesTemplate ? getRecentMessages(extensionSettings.messageSummarizationRecentMessagesTemplate, mesNum, includedFields) || "" : "";
-	const currentTracker = getCurrentTracker(mesNum, includedFields);
-	const trackerFormat = extensionSettings.trackerFormat;
-	const trackerFieldPrompt = getTrackerPrompt(extensionSettings.trackerDef, includedFields);
-
-	const vars = {
-		trackerSystemPrompt,
-		messageSummarizationSystemPrompt,
-		characterDescriptions,
-		trackerExamples,
-		recentMessages,
-		currentTracker,
-		trackerFormat,
-		trackerFieldPrompt,
-	};
-
-	debug("Generated Message Summarization System Prompt (Summarization):", vars);
-	return formatTemplate(extensionSettings.messageSummarizationContextTemplate, vars);
-}
-
-/**
- * Retrieves the system prompt. {{charNames}}, {{defaultTracker}}, {{trackerFormat}}
- * @param {string} template
- * @param {string} includedFields
- * @returns {string} The system prompt.
- */
 function getSystemPrompt(template, includedFields) {
 	let charNames = [name1];
 
@@ -737,13 +656,11 @@ function getExampleTrackers(includedFields) {
 }
 
 /**
- * Retrieves the request prompt. {{trackerFieldPrompt}}, {{trackerFormat}}, {{message}}, {{firstStageMessage}}
  * @param {string} template - The request prompt template from extensionSettings.
  * @param {number|null} mesNum - The message number.
  * @param {string} includedFields
- * @param {string|null} firstStage - The first stage message (changes list) if in two-stage mode.
  */
-export function getRequestPrompt(template, mesNum = null, includedFields, firstStage = null) {
+export function getRequestPrompt(template, mesNum = null, includedFields) {
 	let messageText = "";
 	if (mesNum != null) {
 		const message = chat[mesNum];
@@ -757,12 +674,6 @@ export function getRequestPrompt(template, mesNum = null, includedFields, firstS
 		trackerFormat: extensionSettings.trackerFormat,
 	};
 
-	// If two-stage mode and firstStage is provided and the template includes {{firstStageMessage}}, add it
-	if (extensionSettings.generationMode === generationModes.TWO_STAGE && firstStage && template.includes("{{firstStageMessage}}")) {
-		vars.firstStageMessage = firstStage;
-	}
-
 	return formatTemplate(template, vars);
 }
-
 // #endregion
