@@ -570,59 +570,108 @@ const minimumDepth = 0;
 
 const responseLength = 0;
 
-const roleplayPrompt = "The tracker block records factual story data for reference only. Tracker is not a character. Base your character's knowledge only on what they could logically know from these facts.";
+const roleplayPrompt = "Treat the tracker block as backstage notes. Never include <tracker> tags or describe tracker updates in your reply. Stay fully in character and respond only with the dialogue or actions the character would naturally deliver, using the tracker information purely as reference.";
 
 //#endregion
 
-export const defaultSettings = {
-	enabled: true,
-	selectedProfile: "current",
-	selectedCompletionPreset: "current",
-	generationTarget: generationTargets.BOTH,
-	showPopupFor: generationTargets.NONE,
-	trackerFormat: trackerFormat.YAML,
-
-	generationMode: generationModes.SINGLE_STAGE,
-
-	generateContextTemplate: generateContextTemplate,
-	generateSystemPrompt: generateSystemPrompt,
-	generateRequestPrompt: generateRequestPrompt,
-	generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-
-	characterDescriptionTemplate: characterDescriptionTemplate,
-
-	mesTrackerTemplate: mesTrackerTemplate,
-	mesTrackerJavascript: mesTrackerJavascript,
-	trackerDef: trackerDef,
-
-	trackerPreviewSelector: trackerPreviewSelector,
-	trackerPreviewPlacement: trackerPreviewPlacement,
-
-	numberOfMessages: numberOfMessages,
-	generateFromMessage: generateFromMessage,
-	minimumDepth: minimumDepth,
-	responseLength: responseLength,
-	roleplayPrompt: roleplayPrompt,
-	selectedPreset: "Default-SingleStage",
-	presets: {
-		"Default-SingleStage": {
-			generationMode: generationModes.SINGLE_STAGE,
-
-			generateContextTemplate: generateContextTemplate,
-			generateSystemPrompt: generateSystemPrompt,
-			generateRequestPrompt: generateRequestPrompt,
-			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
-			roleplayPrompt: roleplayPrompt,
-
-			characterDescriptionTemplate: characterDescriptionTemplate,
-
-			mesTrackerTemplate: mesTrackerTemplate,
-			mesTrackerJavascript: mesTrackerJavascript,
-			trackerDef: trackerDef,
-		},
-	},
-	debugMode: false,
-	trackerInjectionEnabled: true,
+export const defaultSettings = {
+
+	enabled: true,
+
+	selectedProfile: "current",
+
+	selectedCompletionPreset: "current",
+
+	generationTarget: generationTargets.BOTH,
+
+	showPopupFor: generationTargets.NONE,
+
+	trackerFormat: trackerFormat.YAML,
+
+
+
+	generationMode: generationModes.SINGLE_STAGE,
+
+
+
+	generateContextTemplate: generateContextTemplate,
+
+	generateSystemPrompt: generateSystemPrompt,
+
+	generateRequestPrompt: generateRequestPrompt,
+
+	generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+
+
+
+	characterDescriptionTemplate: characterDescriptionTemplate,
+
+
+
+	mesTrackerTemplate: mesTrackerTemplate,
+
+	mesTrackerJavascript: mesTrackerJavascript,
+
+	trackerDef: trackerDef,
+
+
+
+	trackerPreviewSelector: trackerPreviewSelector,
+
+	trackerPreviewPlacement: trackerPreviewPlacement,
+
+
+
+	numberOfMessages: numberOfMessages,
+
+	generateFromMessage: generateFromMessage,
+
+	minimumDepth: minimumDepth,
+
+	responseLength: responseLength,
+
+	roleplayPrompt: roleplayPrompt,
+
+	selectedPreset: "Default-SingleStage",
+
+	presets: {
+
+		"Default-SingleStage": {
+
+			generationMode: generationModes.SINGLE_STAGE,
+
+
+
+			generateContextTemplate: generateContextTemplate,
+
+			generateSystemPrompt: generateSystemPrompt,
+
+			generateRequestPrompt: generateRequestPrompt,
+
+			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+
+			roleplayPrompt: roleplayPrompt,
+
+
+
+			characterDescriptionTemplate: characterDescriptionTemplate,
+
+
+
+			mesTrackerTemplate: mesTrackerTemplate,
+
+			mesTrackerJavascript: mesTrackerJavascript,
+
+			trackerDef: trackerDef,
+
+		},
+
+	},
+
+	debugMode: false,
+
+	trackerInjectionEnabled: true,
+
 };
 
 // Default test data for development
