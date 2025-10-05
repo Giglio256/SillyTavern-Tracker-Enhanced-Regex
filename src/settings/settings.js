@@ -39,7 +39,7 @@ export async function initSettings() {
 	const currentSettings = { ...extensionSettings };
 
 	if (!currentSettings.trackerDef) {
-		const allowedKeys = ["enabled", "generateContextTemplate", "generateSystemPrompt", "generateRequestPrompt", "characterDescriptionTemplate", "mesTrackerTemplate", "numberOfMessages", "responseLength", "debugMode"];
+		const allowedKeys = ["enabled", "generateContextTemplate", "generateSystemPrompt", "generateRequestPrompt", "roleplayPrompt", "characterDescriptionTemplate", "mesTrackerTemplate", "numberOfMessages", "responseLength", "debugMode"];
 
 		const newSettings = {
 			...defaultSettings,
@@ -132,6 +132,7 @@ function setSettingsInitialValues() {
 	$("#tracker_enhanced_context_prompt").val(extensionSettings.generateContextTemplate);
 	$("#tracker_enhanced_system_prompt").val(extensionSettings.generateSystemPrompt);
 	$("#tracker_enhanced_request_prompt").val(extensionSettings.generateRequestPrompt);
+	$("#tracker_enhanced_roleplay_prompt").val(extensionSettings.roleplayPrompt);
 	$("#tracker_enhanced_recent_messages").val(extensionSettings.generateRecentMessagesTemplate);
 	$("#tracker_enhanced_inline_request_prompt").val(extensionSettings.inlineRequestPrompt);
 	$("#tracker_enhanced_message_summarization_context_template").val(extensionSettings.messageSummarizationContextTemplate);
@@ -191,6 +192,7 @@ function registerSettingsListeners() {
 	$("#tracker_enhanced_context_prompt").on("input", onSettingInputareaInput("generateContextTemplate"));
 	$("#tracker_enhanced_system_prompt").on("input", onSettingInputareaInput("generateSystemPrompt"));
 	$("#tracker_enhanced_request_prompt").on("input", onSettingInputareaInput("generateRequestPrompt"));
+	$("#tracker_enhanced_roleplay_prompt").on("input", onSettingInputareaInput("roleplayPrompt"));
 	$("#tracker_enhanced_recent_messages").on("input", onSettingInputareaInput("generateRecentMessagesTemplate"));
 	$("#tracker_enhanced_inline_request_prompt").on("input", onSettingInputareaInput("inlineRequestPrompt"));
 	$("#tracker_enhanced_message_summarization_context_template").on("input", onSettingInputareaInput("messageSummarizationContextTemplate"));
@@ -653,6 +655,7 @@ function getCurrentPresetSettings() {
 		generateSystemPrompt: extensionSettings.generateSystemPrompt,
 		generateRequestPrompt: extensionSettings.generateRequestPrompt,
 		generateRecentMessagesTemplate: extensionSettings.generateRecentMessagesTemplate,
+		roleplayPrompt: extensionSettings.roleplayPrompt,
 		
 		messageSummarizationContextTemplate: extensionSettings.messageSummarizationContextTemplate,
 		messageSummarizationSystemPrompt: extensionSettings.messageSummarizationSystemPrompt,

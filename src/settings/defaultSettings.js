@@ -743,6 +743,8 @@ const minimumDepth = 0;
 
 const responseLength = 0;
 
+const roleplayPrompt = "The tracker block records factual story data for reference only. Tracker is not a character. Base your character's knowledge only on what they could logically know from these facts.";
+
 //#endregion
 
 export const defaultSettings = {
@@ -780,6 +782,7 @@ export const defaultSettings = {
 	generateFromMessage: generateFromMessage,
 	minimumDepth: minimumDepth,
 	responseLength: responseLength,
+	roleplayPrompt: roleplayPrompt,
 	selectedPreset: "Default-SingleStage",
 	presets: {
 		"Default-SingleStage": {
@@ -789,6 +792,7 @@ export const defaultSettings = {
 			generateSystemPrompt: generateSystemPrompt,
 			generateRequestPrompt: generateRequestPrompt,
 			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+			roleplayPrompt: roleplayPrompt,
 
 			messageSummarizationContextTemplate: "",
 			messageSummarizationSystemPrompt: "",
@@ -810,6 +814,7 @@ export const defaultSettings = {
 			generateSystemPrompt: twoStageGenerateSystemPrompt,
 			generateRequestPrompt: twoStageGenerateRequestPrompt,
 			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+			roleplayPrompt: roleplayPrompt,
 
 			messageSummarizationContextTemplate: messageSummarizationContextTemplate,
 			messageSummarizationSystemPrompt: messageSummarizationSystemPrompt,
@@ -831,6 +836,7 @@ export const defaultSettings = {
 			generateSystemPrompt: generateSystemPrompt,
 			generateRequestPrompt: generateRequestPrompt,
 			generateRecentMessagesTemplate: generateRecentMessagesTemplate,
+			roleplayPrompt: roleplayPrompt,
 
 			messageSummarizationContextTemplate: "",
 			messageSummarizationSystemPrompt: "",

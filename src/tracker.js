@@ -83,7 +83,9 @@ export async function injectTracker(tracker = "", position = 0) {
 		trackerYAML = cleanTracker(tracker, extensionSettings.trackerDef, OUTPUT_FORMATS.YAML, false);
 		if(trackerYAML != "") {
 			debug("Injecting tracker:", { tracker: trackerYAML, position });
-			trackerYAML = `<tracker>\n${trackerYAML}\n</tracker>`;
+			const roleplayPrompt = (extensionSettings.roleplayPrompt ?? "").trim();
+			const trackerBlock = `<tracker>\n${trackerYAML}\n</tracker>`;
+			trackerYAML = roleplayPrompt ? `${roleplayPrompt}\n${trackerBlock}` : trackerBlock;
 			trackerIncluded = true;
 		}
 	}
