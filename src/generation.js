@@ -7,8 +7,10 @@ import { yamlToJSON } from "../lib/ymlParser.js";
 import { extensionSettings } from "../index.js";
 import { FIELD_INCLUDE_OPTIONS, getDefaultTracker, getExampleTrackers as getExampleTrackersFromDef, getTracker, getTrackerPrompt, OUTPUT_FORMATS, updateTracker } from "./trackerDataHandler.js";
 import { trackerFormat } from "./settings/defaultSettings.js";
+import { runRegexScriptsOnText } from "./stBridge.js";
 
 // #region Utility Functions
+
 
 /**
  * Gets the profile ID for a given profile name.
@@ -585,6 +587,20 @@ function getCharacterDescriptions() {
 	return charDescriptionString.trim();
 }
 
+/** Apply selected regex preprocessing (local-only). Returns cleaned text or the original when disabled/none selected. */
+function applyPreprocessing(text) {
+	if (extensionSettings.preprocessingEnabled === true
+		&& Array.isArray(extensionSettings.regexScripts)
+		&& extensionSettings.regexScripts.length > 0) {
+		try {
+			return runRegexScriptsOnText(String(text ?? ""), extensionSettings.regexScripts);
+		} catch {
+			return String(text ?? "");
+		}
+	}
+	return String(text ?? "");
+}
+
 /**
  * Retrieves recent messages up to a certain number and formats them. {{char}}, {{message}}, {{tracker}}, {{#if tracker}}...{{/if}}
  */
@@ -595,7 +611,8 @@ function getRecentMessages(template, mesNum, includedFields) {
 	return messages
 		.map((c) => {
 			const name = c.name;
-			const message = c.mes.replace(/<tracker>[\s\S]*?<\/tracker>/g, "").trim();
+			let message = c.mes.replace(/<tracker>[\s\S]*?<\/tracker>/g, "").trim();
+			message = applyPreprocessing(message);
 
 			let hasTracker = c.tracker && Object.keys(c.tracker).length !== 0;
 			let trackerContent = "";
@@ -664,7 +681,9 @@ export function getRequestPrompt(template, mesNum = null, includedFields) {
 	let messageText = "";
 	if (mesNum != null) {
 		const message = chat[mesNum];
-		messageText = message.mes;
+		let mt = message.mes;
+		mt = mt.replace(/<tracker>[\s\S]*?<\/tracker>/g, "").trim();
+		messageText = applyPreprocessing(mt);
 	}
 
 	const trackerFieldPromptVal = getTrackerPrompt(extensionSettings.trackerDef, includedFields);
