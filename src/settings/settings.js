@@ -1,7 +1,10 @@
 import { saveSettingsDebounced } from "../../../../../../script.js";
 import { getContext } from '../../../../../../scripts/extensions.js';
+import { getRegexScriptNames, isRegexEngineAvailable, runRegexScriptsOnText } from '../stBridge.js';
 
+ 
 import { extensionFolderPath, extensionSettings } from "../../index.js";
+
 import { error, debug, toTitleCase } from "../../lib/utils.js";
 import { defaultSettings, generationTargets } from "./defaultSettings.js";
 import { generationCaptured } from "../../lib/interconnection.js";
@@ -139,9 +142,16 @@ function setSettingsInitialValues() {
 	$("#tracker_enhanced_minimum_depth").val(extensionSettings.minimumDepth);
 	$("#tracker_enhanced_response_length").val(extensionSettings.responseLength);
 
+	// Regex preprocessing initial values
+	$("#tracker_enhanced_enable_preprocessing").prop("checked", extensionSettings.preprocessingEnabled === true);
+	populateRegexDropdown();
+	initRegexScriptsSelect2();
+	updatePreprocessingUIState();
+
 	// Process the tracker javascript
 	processTrackerJavascript();
 }
+
 
 // #endregion
 
@@ -193,10 +203,50 @@ function registerSettingsListeners() {
 	$("#tracker_enhanced_minimum_depth").on("input", onSettingNumberInput("minimumDepth"));
 	$("#tracker_enhanced_response_length").on("input", onSettingNumberInput("responseLength"));
 
+	// master toggle for preprocessing (persist + update UI state)
+	$("#tracker_enhanced_enable_preprocessing").on("input", function () {
+		const enabled = $(this).is(":checked");
+		extensionSettings.preprocessingEnabled = enabled;
+		saveSettingsDebounced();
+		updatePreprocessingUIState();
+	});
+
+	// persist selected regex scripts
+	$("#tracker_enhanced_regex_scripts").on("change", function () {
+		const selected = $(this).val() || [];
+		extensionSettings.regexScripts = Array.isArray(selected) ? selected : [];
+		saveSettingsDebounced();
+	});
+
 	$("#tracker_enhanced_prompt_maker").on("click", onTrackerPromptMakerClick);
 	$("#tracker_enhanced_generate_template").on("click", onGenerateTemplateClick);
 	$("#tracker_enhanced_generate_javascript").on("click", onGenerateJavaScriptClick);
 	$("#tracker_enhanced_reset_presets").on("click", onTrackerPromptResetClick);
+
+	// preview: run selected scripts over sample text and show result
+	$("#tracker_enhanced_regex_preview_btn").on("click", function () {
+		const $in = $("#tracker_enhanced_regex_preview_input");
+		const $out = $("#tracker_enhanced_regex_preview_output");
+		const $applied = $("#tracker_enhanced_regex_applied");
+
+		const inputText = String($in.val() ?? "");
+		const selected = Array.isArray(extensionSettings.regexScripts) ? extensionSettings.regexScripts : [];
+
+		// show applied list (order preserved)
+		$applied.text(selected.length ? selected.join(" → ") : "(none)");
+
+		// if nothing selected, echo input
+		if (selected.length === 0) {
+			$out.val(inputText);
+			return;
+		}
+
+		// run preview via bridge (local-only apply; engine used just to resolve script defs)
+		const cleaned = runRegexScriptsOnText(inputText, selected);
+		$out.val(cleaned);
+		debug(`[Tracker Enhanced][Preview] selected=${selected.join(" | ")} changed=${cleaned !== inputText}`);
+	});
+
 
 	const {
 		eventSource,
@@ -686,7 +736,7 @@ function onSettingSelectChange(settingName) {
 	};
 }
 
-/**
+/**
  * Returns a function to handle textarea input changes for a given setting.
  * @param {string} settingName The name of the setting.
  * @returns {Function} The event handler function.
@@ -944,7 +994,7 @@ function onTrackerPromptResetClick() {
             toastr.success("Presets and tracker definitions restored to default values. Connection and UI settings preserved.");
             
         } catch (error) {
-            console.error("Failed to reset settings:", error);
+           	console.error("Failed to reset settings:", error);
             toastr.error("Failed to reset settings. Check console for details.");
         }
 
@@ -952,6 +1002,104 @@ function onTrackerPromptResetClick() {
 		resetLabel.text("");
 		resetButton.off("click").on("click", onTrackerPromptResetClick);
     });
+}
+ 
+// #region Regex Preprocessing (populate list)
+
+function populateRegexDropdown() {
+	const select = $("#tracker_enhanced_regex_scripts");
+	if (!select.length) return;
+
+	select.empty();
+
+	let availableNames = [];
+	try {
+		// if the regex engine hasn't finished loading yet, retry shortly
+		if (!isRegexEngineAvailable()) {
+			setTimeout(populateRegexDropdown, 250);
+			return;
+		}
+
+		// via bridge
+		const names = getRegexScriptNames();
+		if (Array.isArray(names)) {
+			for (const name of names) {
+				availableNames.push(name);
+				select.append($("<option>").val(name).text(name));
+			}
+		}
+	} catch (e) {
+		console.warn("[Tracker Enhanced] Unable to load regex scripts:", e?.message || e);
+	}
+
+	// prune any previously selected names that no longer exist
+	if (Array.isArray(extensionSettings.regexScripts)) {
+		const pruned = extensionSettings.regexScripts.filter(n => availableNames.includes(n));
+		if (pruned.length !== extensionSettings.regexScripts.length) {
+			extensionSettings.regexScripts = pruned;
+			saveSettingsDebounced();
+		}
+	}
+}
+
+function initRegexScriptsSelect2() {
+	const $sel = $("#tracker_enhanced_regex_scripts");
+	if (!$sel.length) return;
+
+	// if already initialized, rebuild (prevents duplicate widgets)
+	if ($sel.data("select2")) {
+		$sel.select2("destroy");
+	}
+
+	// render dropdown at BODY level to avoid overflow/z-index clipping
+	const $dropdownHost = $(document.body);
+
+	$sel.select2({
+		width: "100%",
+		placeholder: "Choose regex scripts…",
+		allowClear: true,
+		closeOnSelect: false,
+		minimumResultsForSearch: 0,
+		dropdownParent: $dropdownHost
+	});
+
+	// ensure the rendered Select2 container stays full width
+	const $container = $sel.data("select2")?.$container || $sel.next(".select2");
+	if ($container && $container.length) {
+		$container.css("width", "100%");
+	}
+
+	// block interaction when preprocessing is disabled (extra safety)
+	$sel.off(".teGuard"); // clear any prior namespaced guards
+	$sel.on("select2:opening.teGuard select2:clearing.teGuard select2:select.teGuard select2:unselect.teGuard", function (e) {
+		if (extensionSettings.preprocessingEnabled !== true) {
+			e.preventDefault();
+		}
+	});
+
+	// reflect any preselected defaults
+	if (Array.isArray(extensionSettings.regexScripts) && extensionSettings.regexScripts.length) {
+		$sel.val(extensionSettings.regexScripts).trigger("change.select2");
+	}
+}
+
+function updatePreprocessingUIState() {
+	const enabled = extensionSettings.preprocessingEnabled === true;
+	const $sel = $("#tracker_enhanced_regex_scripts");
+
+	// never actually disable Select2 (avoids collapsed box); toggle visual state on its container
+	const $container = $sel.data("select2")?.$container || $sel.next(".select2");
+	if (!$container || !$container.length) return;
+
+	// keep width stable
+	$container.css("width", "100%");
+
+	if (enabled) {
+		$container.removeClass("te-disabled").removeAttr("title").attr("aria-disabled", "false");
+	} else {
+		$container.addClass("te-disabled").attr("title", "Preprocessing is disabled").attr("aria-disabled", "true");
+		$container.blur();
+	}
 }
 
 // #endregion
