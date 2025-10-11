@@ -587,6 +587,11 @@ export const defaultSettings = {
 	showPopupFor: generationTargets.NONE,
 
 	trackerFormat: trackerFormat.YAML,
+	
+	// Regex preprocessing (defaults)
+	preprocessingEnabled: false,
+	regexScripts: [],
+
 
 
 
