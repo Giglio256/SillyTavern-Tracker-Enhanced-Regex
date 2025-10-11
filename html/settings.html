@@ -72,6 +72,39 @@
 			</div>
 			<hr class="sysHR" />
 
+			<!-- Regex Preprocessing (UI scaffold) -->
+			<div class="tracker-block m-b-1 m-t-1">
+				<label for="tracker_enhanced_enable_preprocessing">Regex Preprocessing</label><br />
+				<small>Selected regex scripts (from the Regex Engine) will run on messages before tracking.</small><br />
+				<div class="tracker-block flex-container">
+					<input id="tracker_enhanced_enable_preprocessing" type="checkbox" />
+					<label for="tracker_enhanced_enable_preprocessing">Enable preprocessing</label>
+				</div>
+				<label for="tracker_enhanced_regex_scripts">Preprocess with Regex Script(s)</label><br />
+				<select id="tracker_enhanced_regex_scripts" class="text_pole" multiple="multiple">
+					<!-- Options will be populated in Step 2 -->
+				</select>
+				<small>Choose one or more regex scripts…</small>
+
+				<!-- Preview preprocessing -->
+				<div class="tracker-block m-t-1">
+					<label for="tracker_enhanced_regex_preview_input">Preview preprocessing</label><br />
+					<small>Type sample text and run the selected scripts to see the cleaned result.</small><br />
+					<textarea id="tracker_enhanced_regex_preview_input" class="text_pole" rows="3" placeholder="Enter sample text..."></textarea>
+					<div class="flex-container" style="margin-top:6px;">
+						<button id="tracker_enhanced_regex_preview_btn" class="menu_button" style="white-space:nowrap;">Run Preview</button>
+					</div>
+					<div style="margin-top:6px;">
+						<small>Applied (in order): <span id="tracker_enhanced_regex_applied">(none)</span></small>
+					</div>
+					<label for="tracker_enhanced_regex_preview_output" style="display:inline-block;margin-top:6px;">Output</label><br />
+					<textarea id="tracker_enhanced_regex_preview_output" class="text_pole" rows="3" readonly placeholder="Cleaned text will appear here..."></textarea>
+				</div>
+
+			</div>
+			<hr class="sysHR" />
+
+
 			<!-- Preset Management -->
 			<div id="preset_settings">
 				<div class="tracker-block m-b-1 m-t-1">
