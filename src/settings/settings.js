@@ -1077,11 +1077,20 @@ function initRegexScriptsSelect2() {
 		}
 	});
 
+	// refresh catalog live when opening
+	$sel.off("select2:opening.teRefresh").on("select2:opening.teRefresh", function () {
+		const prev = Array.isArray(extensionSettings.regexScripts) ? extensionSettings.regexScripts.slice() : [];
+		populateRegexDropdown();
+		const kept = prev.filter(n => $sel.find('option[value="'+n+'"]').length);
+		if (kept.length) $sel.val(kept).trigger('change.select2'); else $sel.val(null).trigger('change.select2');
+	});
+
 	// reflect any preselected defaults
 	if (Array.isArray(extensionSettings.regexScripts) && extensionSettings.regexScripts.length) {
 		$sel.val(extensionSettings.regexScripts).trigger("change.select2");
 	}
 }
+
 
 function updatePreprocessingUIState() {
 	const enabled = extensionSettings.preprocessingEnabled === true;
