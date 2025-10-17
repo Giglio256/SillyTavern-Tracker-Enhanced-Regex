@@ -21,8 +21,8 @@ import { TrackerPreviewManager } from "./src/ui/trackerPreviewManager.js";
 import { generateTrackerCommand, getTrackerCommand, saveTrackerToMessageCommand, stateTrackerCommand, trackerOverrideCommand, toggleTrackerInjectionCommand } from "./src/commands.js";
 import { FIELD_INCLUDE_OPTIONS } from "./src/trackerDataHandler.js";
 
-export const extensionName = "tracker-enhanced";
-export const extensionFolderPath = "scripts/extensions/third-party/SillyTavern-Tracker-Enhanced";
+export const extensionName = "tracker-giglio";
+export const extensionFolderPath = "scripts/extensions/third-party/SillyTavern-Tracker-Giglio";
 
 if (!extension_settings[extensionName]) extension_settings[extensionName] = {};
 export const extensionSettings = extension_settings[extensionName];
