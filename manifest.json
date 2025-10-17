@@ -1,11 +1,11 @@
 {
-	"display_name": "Tracker Enhanced",
+	"display_name": "Tracker Giglio",
 	"loading_order": 1,
 	"requires": [],
 	"optional": [],
 	"js": "index.js",
 	"css": "style.css",
-	"author": "harrywenjie",
+	"author": "Giglio",
 	"version": "0.0.3",
-	"homePage": "https://github.com/harrywenjie/SillyTavern-Tracker-Enhanced"
+	"homePage": "https://github.com/Giglio256/SillyTavern-Tracker-Giglio"
 }
